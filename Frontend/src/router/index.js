@@ -1,15 +1,15 @@
 import { createRouter, createWebHistory } from "vue-router"
-import LoginView from "../views/auth/LoginView.vue"
-import DashBoardView from "../views/dashboard/DashBoardView.vue"
-import UsersView from "../views/users/UsersView.vue"
-import RolesView from "../views/roles/RolesView.vue"
-import PermissionsView from "../views/permissions/PermissionsView.vue"
-import ClientsView from "../views/clients/ClientsView.vue"
-import SuppliersView from "../views/suppliers/SuppiersView.vue"
-import ProductsView from "../views/products/ProductsView.vue"
-import InventoryView from "../views/inventory/InventoryView.vue"
-import RecepcionesView from "../views/recepciones/RecepcionesView.vue"
-import AuditView from "../views/audit/AuditView.vue"
+import login from "../pages/login.vue"
+import Dashboard from "../pages/Dashboard.vue"
+import Users from "../pages/Users.vue"
+import Roles from "../pages/Roles.vue" //Roles
+import Permissions from "../pages/Permissions.vue" //Permissions
+import Clients from "../pages/Clients.vue"
+import Suppliers from "../pages/Suppliers.vue"
+import Products from "../pages/Products.vue"
+import Inventory from "../pages/Inventory.vue" //Inventario
+import Recepciones from "../pages/Recepciones.vue" //Recepciones
+import Audit from "../pages/Audit.vue" //Audit
 
 const routes = [
     {
@@ -18,47 +18,47 @@ const routes = [
     },
     {
         path: '/login',
-        redirect: LoginView
+        redirect: login
     },
     {
         path: '/dashboard',
-        redirect: DashBoardView
+        redirect: Dashboard
     },
     {
         path: '/users',
-        redirect: UsersView
+        redirect: Users
     },
     {
         path: '/roles',
-        redirect: RolesView
+        redirect: Roles
     },
     {
         path: '/permissions',
-        redirect: PermissionsView
+        redirect: Permissions
     },
     {
         path: '/clients',
-        redirect: ClientsView
+        redirect: Clients
     },
     {
         path: '/suppliers',
-        redirect: SuppliersView
+        redirect: Suppliers
     },
     {
         path: '/products',
-        redirect: ProductsView
+        redirect: Products
     },
     {
         path: '/inventory',
-        redirect: InventoryView
+        redirect: Inventory
     },
     {
         path: '/recepciones',
-        redirect: RecepcionesView
+        redirect: Recepciones
     },
     {
         path: '/audit',
-        redirect: AuditView
+        redirect: Audit
     }
 ]
 
