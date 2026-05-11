@@ -10,6 +10,7 @@ import Products from "../pages/Products.vue"
 import Inventory from "../pages/Inventory.vue" //Inventario
 import Recepciones from "../pages/Recepciones.vue" //Recepciones
 import Audit from "../pages/Audit.vue" //Audit
+import { Component } from "react"
 
 const routes = [
     {
@@ -18,47 +19,47 @@ const routes = [
     },
     {
         path: '/login',
-        redirect: login
+        component: login
     },
     {
         path: '/dashboard',
-        redirect: Dashboard
+        component: Dashboard
     },
     {
         path: '/users',
-        redirect: Users
+        component: Users
     },
     {
         path: '/roles',
-        redirect: Roles
+        component: Roles
     },
     {
         path: '/permissions',
-        redirect: Permissions
+        component: Permissions
     },
     {
         path: '/clients',
-        redirect: Clients
+        component: Clients
     },
     {
         path: '/suppliers',
-        redirect: Suppliers
+        component: Suppliers
     },
     {
         path: '/products',
-        redirect: Products
+        component: Products
     },
     {
         path: '/inventory',
-        redirect: Inventory
+        component: Inventory
     },
     {
         path: '/recepciones',
-        redirect: Recepciones
+        component: Recepciones
     },
     {
         path: '/audit',
-        redirect: Audit
+        component: Audit
     }
 ]
 
