@@ -1,16 +1,16 @@
 import { createRouter, createWebHistory } from "vue-router"
+import {useAuthStore} from "../stores/authStore"
 import login from "../pages/login.vue"
 import Dashboard from "../pages/Dashboard.vue"
 import Users from "../pages/Users.vue"
-import Roles from "../pages/Roles.vue" //Roles
-import Permissions from "../pages/Permissions.vue" //Permissions
+import Roles from "../pages/Roles.vue" 
+import Permissions from "../pages/Permissions.vue" 
 import Clients from "../pages/Clients.vue"
 import Suppliers from "../pages/Suppliers.vue"
 import Products from "../pages/Products.vue"
-import Inventory from "../pages/Inventory.vue" //Inventario
-import Recepciones from "../pages/Recepciones.vue" //Recepciones
-import Audit from "../pages/Audit.vue" //Audit
-import { Component } from "react"
+import Inventory from "../pages/Inventory.vue" 
+import Recepciones from "../pages/Recepciones.vue" 
+import Audit from "../pages/Audit.vue" 
 
 const routes = [
     {
@@ -19,53 +19,95 @@ const routes = [
     },
     {
         path: '/login',
-        component: login
+        component: login,
+        meta:{
+            requiresAuth: true
+        }
     },
     {
         path: '/dashboard',
-        component: Dashboard
+        component: Dashboard,
+        meta:{
+            requiresAuth: true
+        }
     },
     {
         path: '/users',
-        component: Users
+        component: Users,
+        meta:{
+            requiresAuth: true
+        }
     },
     {
         path: '/roles',
-        component: Roles
+        component: Roles,
+        meta:{
+            requiresAuth: true
+        }
     },
     {
         path: '/permissions',
-        component: Permissions
+        component: Permissions,
+        meta:{
+            requiresAuth: true
+        }
     },
     {
         path: '/clients',
-        component: Clients
+        component: Clients,
+        meta:{
+            requiresAuth: true
+        }
     },
     {
         path: '/suppliers',
-        component: Suppliers
+        component: Suppliers,
+        meta:{
+            requiresAuth: true
+        }
     },
     {
         path: '/products',
-        component: Products
+        component: Products,
+        meta:{
+            requiresAuth: true
+        }
     },
     {
         path: '/inventory',
-        component: Inventory
+        component: Inventory,
+        meta:{
+            requiresAuth: true
+        }
     },
     {
         path: '/recepciones',
-        component: Recepciones
+        component: Recepciones,
+        meta:{
+            requiresAuth: true
+        }
     },
     {
         path: '/audit',
-        component: Audit
+        component: Audit,
+        meta:{
+            requiresAuth: true
+        }
     }
 ]
 
 const router = createRouter({
     history: createWebHistory(),
     routes
+})
+
+router.beforeEach((to, from, next) => {
+    const authStore = useAuthStore()
+    if(to.meta.requiresAuth && !authStore.isAuthenticated){
+        next('/login')
+        return
+    }
+    next()
 })
 
 export default router
