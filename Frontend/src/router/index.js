@@ -19,10 +19,7 @@ const routes = [
     },
     {
         path: '/login',
-        component: login,
-        meta:{
-            requiresAuth: true
-        }
+        component: login
     },
     {
         path: '/dashboard',
