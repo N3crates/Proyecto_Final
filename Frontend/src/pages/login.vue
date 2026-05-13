@@ -57,6 +57,7 @@ async function onSubmit() {
     }
     const data = await loginRequest(credentials)
     authStore.setToken(data.token)
+    localStorage.setItem('usuario', data.user.usuario)
     router.push('/dashboard')
   } catch (e) {
     error.value = e.response?.data?.message || 'Error al iniciar sesión'
