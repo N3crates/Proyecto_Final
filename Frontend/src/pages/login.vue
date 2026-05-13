@@ -36,9 +36,11 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/authStore'
+import { loginRequest } from '../services/authService'
 
 const router = useRouter()
-
+const authStore = useAuthStore()
 const usuario = ref('')
 const password = ref('')
 const loading = ref(false)
@@ -49,20 +51,17 @@ async function onSubmit() {
   error.value = null
 
   try {
-    const res = await fetch('http://localhost:3001/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ usuario: usuario.value, password: password.value })
-    })
-
-    const data = await res.json()
-
-    if (!res.ok) throw new Error(data.message || 'Error al iniciar sesión')
-
-    localStorage.setItem('token', data.token)
+    const credentials = {
+      usuario: usuario.value,
+      password: password.value
+    }
+    const data = await loginRequest(credentials)
+    authStore.setToken(data.token)
     router.push('/dashboard')
   } catch (e) {
-    error.value = e.message
+    error.value = e.response?.data?.message || 'Error al iniciar sesión'
+    console.error(e)
+
   } finally {
     loading.value = false
   }
