@@ -2,13 +2,13 @@ import { createRouter, createWebHistory } from "vue-router"
 import login from "../pages/login.vue"
 import Dashboard from "../pages/Dashboard.vue"
 import Users from "../pages/Users.vue"
-import Roles from "../pages/Roles.vue" //Roles
-import Permissions from "../pages/Permissions.vue" //Permissions
+import Roles from "../pages/Roles.vue"
+import Permissions from "../pages/Permissions.vue"
 import Clients from "../pages/Clients.vue"
 import Suppliers from "../pages/Suppliers.vue"
 import Products from "../pages/Products.vue"
-import Inventory from "../pages/Inventory.vue" //Inventario
-import Recepciones from "../pages/Recepciones.vue" //Recepciones
+import Inventory from "../pages/Inventory.vue"
+import Recepciones from "../pages/Recepciones.vue"
 import Audit from "../pages/Audit.vue" //Audit
 import { Component } from "react"
 
