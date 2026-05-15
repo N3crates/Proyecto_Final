@@ -8,14 +8,12 @@
             <h1 class="text-2xl font-bold">Usuarios</h1>
             <p class="text-sm opacity-70">Administra usuarios del sistema ERP.</p>
           </div>
-          <button class="btn btn-primary">+ Nuevo Usuario</button>
+          <button class="btn btn-primary" @click="userModal.open()">+ Nuevo Usuario</button>
         </div>
       </div>
 
-      <!-- Alerta de error -->
-      <div v-if="error" class="alert alert-error">
-        <span>{{ error }}</span>
-      </div>
+      <div v-if="error" class="alert alert-error"><span>{{ error }}</span></div>
+      <div v-if="success" class="alert alert-success"><span>{{ success }}</span></div>
 
       <div class="rounded-2xl border border-base-300 bg-base-100 shadow-lg overflow-x-auto">
         <table class="table w-full">
@@ -30,9 +28,7 @@
           </thead>
           <tbody>
             <tr v-if="loading">
-              <td colspan="5" class="text-center py-8">
-                <span class="loading loading-spinner"></span>
-              </td>
+              <td colspan="5" class="text-center py-8"><span class="loading loading-spinner"></span></td>
             </tr>
             <tr v-else-if="users.length === 0">
               <td colspan="5" class="text-center opacity-50 py-8">Sin usuarios registrados</td>
@@ -47,8 +43,8 @@
                 </span>
               </td>
               <td class="flex gap-2">
-                <button class="btn btn-sm btn-warning">Editar</button>
-                <button class="btn btn-sm btn-error">Eliminar</button>
+                <button class="btn btn-sm btn-warning" @click="userModal.open(user)">Editar</button>
+                <button class="btn btn-sm btn-error" @click="openDelete(user)">Eliminar</button>
               </td>
             </tr>
           </tbody>
@@ -56,17 +52,38 @@
       </div>
 
     </div>
+
+    <UserModal ref="userModal" :loading="saving" @submit="handleSubmit" />
+    <ConfirmDialog
+      ref="confirmDialog"
+      title="Eliminar usuario"
+      message="¿Estás seguro de que deseas eliminar este usuario? Esta acción no se puede deshacer."
+      :loading="saving"
+      @confirm="handleDelete"
+    />
   </AdminLayout>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import AdminLayout from '../layouts/AdminLayout.vue'
-import { getUsers } from '../services/users.js'
+import UserModal from '../components/UserModal.vue'
+import ConfirmDialog from '../components/ConfirmDialog.vue'
+import { getUsers, createUser, updateUser, deleteUser } from '../services/users.js'
 
 const users = ref([])
 const loading = ref(false)
+const saving = ref(false)
 const error = ref(null)
+const success = ref(null)
+const selectedUser = ref(null)
+const userModal = ref(null)
+const confirmDialog = ref(null)
+
+function showSuccess(msg) {
+  success.value = msg
+  setTimeout(() => success.value = null, 3000)
+}
 
 async function loadUsers() {
   loading.value = true
@@ -77,6 +94,47 @@ async function loadUsers() {
     error.value = 'Error al cargar usuarios'
   } finally {
     loading.value = false
+  }
+}
+
+async function handleSubmit(payload) {
+  saving.value = true
+  error.value = null
+  try {
+    if (payload.mode === 'create') {
+      await createUser(payload)
+      showSuccess('Usuario creado correctamente')
+    } else {
+      await updateUser(payload.id, payload)
+      showSuccess('Usuario actualizado correctamente')
+    }
+    userModal.value.close()
+    await loadUsers()
+  } catch (e) {
+    error.value = 'Error al guardar usuario'
+  } finally {
+    saving.value = false
+  }
+}
+
+function openDelete(user) {
+  selectedUser.value = user
+  confirmDialog.value.open()
+}
+
+async function handleDelete() {
+  saving.value = true
+  error.value = null
+  try {
+    await deleteUser(selectedUser.value.id)
+    showSuccess('Usuario eliminado correctamente')
+    confirmDialog.value.close()
+    await loadUsers()
+  } catch (e) {
+    error.value = 'Error al eliminar usuario'
+  } finally {
+    saving.value = false
+    selectedUser.value = null
   }
 }
 
