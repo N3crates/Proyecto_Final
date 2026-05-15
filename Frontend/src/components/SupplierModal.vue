@@ -4,10 +4,14 @@
       <h3 class="font-bold text-lg">{{ mode === 'create' ? 'Nuevo Proveedor' : 'Editar Proveedor' }}</h3>
 
       <div class="space-y-3 mt-4">
-        <input v-model="form.nombre" class="input input-bordered w-full" placeholder="Nombre" />
+        <input v-model="form.nombre" class="input input-bordered w-full" placeholder="Nombre (obligatorio)" />
+        <input v-model="form.rfc" class="input input-bordered w-full" placeholder="RFC" />
         <input v-model="form.email" type="email" class="input input-bordered w-full" placeholder="Email" />
         <input v-model="form.telefono" class="input input-bordered w-full" placeholder="Teléfono" />
         <input v-model="form.direccion" class="input input-bordered w-full" placeholder="Dirección" />
+        <input v-model="form.contacto" class="input input-bordered w-full" placeholder="Contacto" />
+        <input v-model="form.giro" class="input input-bordered w-full" placeholder="Giro" />
+        <textarea v-model="form.notas" class="textarea textarea-bordered w-full" placeholder="Notas"></textarea>
       </div>
 
       <div class="modal-action">
@@ -29,11 +33,12 @@ defineProps({ loading: { type: Boolean, default: false } })
 const emit = defineEmits(['submit', 'cancel'])
 const dialogRef = ref(null)
 const mode = ref('create')
-const form = ref({ nombre: '', email: '', telefono: '', direccion: '' })
+const emptyForm = () => ({ nombre: '', rfc: '', email: '', telefono: '', direccion: '', contacto: '', giro: '', notas: '' })
+const form = ref(emptyForm())
 
 function open(selected = null) {
   mode.value = selected ? 'edit' : 'create'
-  form.value = selected ? { ...selected } : { nombre: '', email: '', telefono: '', direccion: '' }
+  form.value = selected ? { ...selected } : emptyForm()
   dialogRef.value.showModal()
 }
 
