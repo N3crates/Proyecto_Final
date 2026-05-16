@@ -8,6 +8,11 @@
             <h1 class="text-2xl font-bold">Usuarios</h1>
             <p class="text-sm opacity-70">Administra usuarios del sistema ERP.</p>
           </div>
+          <div v-if="isAdmin()">
+            <span class="badge badge-primary">
+              Panel administrador
+            </span>
+          </div>
           <button v-if="hasPermission('users:create')" class="btn btn-primary" @click="userModal.open()">
             + Nuevo Usuario
           </button>
@@ -18,7 +23,7 @@
         </div>
       </div>
  
-      <div v-if="error" class="alert alert-error"><span>{{ error }}</span></div>
+      <ErrorState v-if="error" :message="error" />
       <div v-if="success" class="alert alert-success"><span>{{ success }}</span></div>
  
       <div class="rounded-2xl border border-base-300 bg-base-100 shadow-lg overflow-x-auto">
@@ -33,14 +38,8 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-if="loading">
-              <td colspan="5" class="text-center py-8">
-                <span class="loading loading-spinner"></span>
-              </td>
-            </tr>
-            <tr v-else-if="users.length === 0">
-              <td colspan="5" class="text-center opacity-50 py-8">Sin usuarios registrados</td>
-            </tr>
+            <LoadingState v-if="loading" />
+            <EmptyState v-else-if="users.length === 0" title="Sin usuarios" description="No hay usuarios registrados" />
             <tr v-for="user in users" :key="user.id">
               <td>{{ user.nombre || user.name }}</td>
               <td>{{ user.usuario || user.email }}</td>
@@ -51,6 +50,7 @@
                 </span>
               </td>
               <td class="flex gap-2">
+                <button v-if="isAdmin()" class="btn btn-sm btn-info">Reset Password</button>
                 <button v-if="hasPermission('users:update')" class="btn btn-sm btn-warning" @click="userModal.open(user)">Editar</button>
                 <button v-if="hasPermission('users:delete')" class="btn btn-sm btn-error" @click="openDelete(user)">Eliminar</button>
               </td>
@@ -60,7 +60,6 @@
       </div>
  
       <div class="flex justify-between items-center mt-4">
-        <!-- FIX: usar funciones en lugar de mutar page directamente en el template -->
         <button class="btn btn-sm" @click="previousPage" :disabled="page <= 1">Anterior</button>
         <span>Página {{ page }}</span>
         <button class="btn btn-sm" @click="nextPage">Siguiente</button>
@@ -83,11 +82,15 @@ import { ref, onMounted } from 'vue'
 import AdminLayout from '../layouts/AdminLayout.vue'
 import UserModal from '../components/UserModal.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
-import { hasPermission } from '../utils/permissions.js'
+import { hasPermission, isAdmin } from '../utils/permissions.js'
 import { useUsers } from '../composables/useUsers.js'
 import { getErrorMessage } from '../utils/errorHandler.js'
 import debounce from 'lodash/debounce'
 import { useNotificationStore } from '../stores/notificationStore.js'
+import { required, validEmail, minLength } from '../utils/validators.js'
+import EmptyState from '../components/EmptyState.vue'
+import ErrorState from '../components/ErrorState.vue'
+import LoadingState from '../components/LoadingState.vue'
  
 const { users, loading, error, page, limit, search, loadUsers, create, update, remove } = useUsers()
 const saving = ref(false)
@@ -105,31 +108,20 @@ function showSuccess(msg) {
  
 async function handleSubmit(payload) {
   error.value = null
- 
-  // FIX: todas las validaciones antes de poner saving = true
-  if (!payload.nombre) {
-    error.value = 'El nombre es obligatorio'
-    return
+
+  const validations = [
+    required(payload.nombre, 'nombre'),
+    required(payload.apellido, 'apellido'),
+    required(payload.usuario, 'usuario'),
+    required(payload.email, 'email'),
+    validEmail(payload.email)
+  ]
+  if(payload.mode === 'create'){
+    validations.push(required(payload.password, 'contraseña'), minLength(payload.password, 6, 'contraseña'))
   }
-  if (!payload.apellido) {
-    error.value = 'El apellido es obligatorio'
-    return
-  }
-  if (!payload.usuario) {
-    error.value = 'El usuario es obligatorio'
-    return
-  }
-  if (!payload.email) {
-    error.value = 'El email es obligatorio'
-    return
-  }
-  if (!emailRegex.test(payload.email)) {
-    error.value = 'Correo electrónico inválido'
-    return
-  }
-  // FIX: faltaba el return cuando no hay contraseña en modo create
-  if (payload.mode === 'create' && !payload.password) {
-    error.value = 'La contraseña es obligatoria'
+  const firstError = validations.find(v => v)
+  if(firstError){
+    error.value = firstError
     return
   }
  
@@ -146,8 +138,6 @@ async function handleSubmit(payload) {
     }
  
     if (payload.mode === 'create') {
-      // FIX: create() ya llama loadUsers() internamente en el composable,
-      // no hace falta llamarlo de nuevo aquí
       await create(cleanPayload)
       notifications.add('Usuario creado correctamente', 'success')
     } else {
@@ -172,7 +162,6 @@ async function handleDelete() {
   saving.value = true
   error.value = null
   try {
-    // FIX: era `delete(...)` que es palabra reservada de JS — debe ser `remove(...)`
     await remove(selectedUser.value.id)
     showSuccess('Usuario eliminado correctamente')
     confirmDialog.value.close()
@@ -185,7 +174,6 @@ async function handleDelete() {
   }
 }
  
-// FIX: page es un ref del composable, hay que usar .value
 function previousPage() {
   if (page.value > 1) {
     page.value--

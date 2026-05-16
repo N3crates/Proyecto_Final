@@ -24,7 +24,6 @@ export const useAuthStore = defineStore('auth', {
             localStorage.removeItem('token')
             localStorage.removeItem('user')
             localStorage.removeItem('permissions')
-            localStorage.removeItem('usuario')
         },
         async initializeAuth() {
             const token = localStorage.getItem('token')
@@ -34,10 +33,10 @@ export const useAuthStore = defineStore('auth', {
             try {
                 this.token = token
                 const response = await meRequest()
-
                 this.user = response.user
-
-                this,this.permissions = response.user.permissions || []
+                this.permissions = response.user.permissions || []
+                localStorage.setItem('user', JSON.stringify(response.user))
+                localStorage.setItem('permissions', JSON.stringify(response.user.permissions || []))
             } catch (error) {
                 this.logout()
             }

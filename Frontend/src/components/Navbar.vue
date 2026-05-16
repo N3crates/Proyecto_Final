@@ -4,8 +4,16 @@
       <span class="text-xl font-bold">DEMEN ERP</span>
     </div>
     <div class="flex-none gap-2">
+      <div class="text-rigth">
+        <p class="font-semibold text-sm">
+          {{ useAuthStore.user?.nombre }}
+        </p>
+        <p class="text-xs opacity-60">
+          {{ useAuthStore.user?.role }}
+        </p>
+      </div>
       <span class="text-sm opacity-60 hidden md:block">Bienvenido</span>
-      <button class="btn btn-ghost btn-sm" @click="cerrarSesion">
+      <button class="btn btn-ghost btn-sm" @click="logout">
         Cerrar sesión
       </button>
     </div>
@@ -14,11 +22,13 @@
 
 <script setup>
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/authStore'
 
+const authStore = useAuthStore()
 const router = useRouter()
 
-function cerrarSesion() {
-  localStorage.removeItem('token')
+function logout() {
+  authStore.logout()
   router.push('/login')
 }
 </script>

@@ -10,6 +10,10 @@
           </div>
           <button class="btn btn-primary" @click="productModal.open()">+ Nuevo Producto</button>
         </div>
+        <div class="flex gap-3 mt-4">
+          <input v-model="search" @input="debounceSearch" class="input input-bordered" placeholder="Buscar producto..." />
+          <button class="btn btn-primary" @click="loadProducts">Buscar</button>
+        </div>
       </div>
 
       <div v-if="error" class="alert alert-error"><span>{{ error }}</span></div>
@@ -52,9 +56,12 @@
           </tbody>
         </table>
       </div>
-
+      <div class="flex justify-between items-center mt-4">
+        <button class="btn btn-sm" @click="previousPage" :disabled="page <= 1">Anterior</button>
+        <span>Pagina {{ page }}</span>
+        <button class="btn btn-sm" @click="nextPage">Siguiente</button>
+      </div>
     </div>
-
     <ProductModal ref="productModal" :loading="saving" @submit="handleSubmit" />
     <ConfirmDialog ref="confirmDialog" title="Eliminar producto" message="¿Estás seguro de que deseas eliminar este producto?" :loading="saving" @confirm="handleDelete" />
   </AdminLayout>
@@ -66,15 +73,19 @@ import AdminLayout from '../layouts/AdminLayout.vue'
 import ProductModal from '../components/ProductModal.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 import { getProducts, createProduct, updateProduct, deleteProduct } from '../services/products.js'
+import { debounce } from 'lodash'
+import { useProducts } from '../composables/useProducts.js'
+import { hasPermission } from '../utils/permissions.js'
+import { getErrorMessage } from '../utils/errorHandler.js'
+import { useNotificationStore } from '../stores/notificationStore.js'
 
-const products = ref([])
-const loading = ref(false)
+const { products, loading, error, page, limit, search, loadProducts, create, update, remove} = useProducts()
 const saving = ref(false)
-const error = ref(null)
 const success = ref(null)
 const selectedProduct = ref(null)
 const productModal = ref(null)
 const confirmDialog = ref(null)
+const notifications = useNotificationStore()
 
 function showSuccess(msg) { success.value = msg; setTimeout(() => success.value = null, 3000) }
 
@@ -88,8 +99,8 @@ async function loadProducts() {
 async function handleSubmit(payload) {
   saving.value = true; error.value = null
   try {
-    if (payload.mode === 'create') { await createProduct(payload); showSuccess('Producto creado correctamente') }
-    else { await updateProduct(payload.id, payload); showSuccess('Producto actualizado correctamente') }
+    if (payload.mode === 'create') { await create(payload); notifications.add('Producto creado correctamente', 'success') }
+    else { await update(payload.id, payload); notifications.add('Producto actualizado correctamente') }
     productModal.value.close()
     await loadProducts()
   } catch (e) { error.value = getErrorMessage(e, 'Error al guradar producto') }
@@ -101,13 +112,30 @@ function openDelete(product) { selectedProduct.value = product; confirmDialog.va
 async function handleDelete() {
   saving.value = true; error.value = null
   try {
-    await deleteProduct(selectedProduct.value.id)
-    showSuccess('Producto eliminado correctamente')
+    await remove(selectedProduct.value.id)
+    notifications.add('Producto eliminado correctamente')
     confirmDialog.value.close()
     await loadProducts()
   } catch (e) { error.value = getErrorMessage(e, 'Error al eliminar producto') }
   finally { saving.value = false; selectedProduct.value = null }
 }
+
+function previousPage(){
+  if(page.value > 1){
+    page.value--
+    loadProducts()
+  }
+}
+
+function nextPage() {
+  page.value++
+  loadProducts()
+}
+
+const debounceSearch = debounce(() => {
+  page.value = 1
+  loadProducts()
+}, 500)
 
 onMounted(() => loadProducts())
 </script>

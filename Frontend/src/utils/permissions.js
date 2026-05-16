@@ -11,3 +11,8 @@ export function hasPermission(permission) {
     permission
   )
 }
+  
+export function hasRole(role) {
+  const authStore = useAuthStore()
+  return (authStore.user?.role === role)
+}
