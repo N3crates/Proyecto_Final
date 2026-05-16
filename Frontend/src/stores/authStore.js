@@ -1,21 +1,46 @@
 import { defineStore } from "pinia";
-import { ref, computed } from "vue";
+import {meRequest} from '../services/authService'
 
-export const useAuthStore = defineStore('auth', () => {
-    const token = ref(localStorage.getItem('token') || null)
-    const isAuthenticated = computed(() => !!token.value)
-    const setToken = (newToken) => {
-        token.value = newToken
-        localStorage.setItem('token', newToken)
-    }
-    const logout = () => {
-        token.value = null
-        localStorage.removeItem('token')
-    }
-    return {
-        token,
-        isAuthenticated,
-        setToken,
-        logout
+export const useAuthStore = defineStore('auth', {
+    state: () => ({
+        token: localStorage.getItem('token') || null,
+        user: JSON.parse(localStorage.getItem('user') || 'null'),
+        permissions: JSON.parse(localStorage.getItem('permissions') || '[]')
+    }),
+    getters: {isAuthenticated: (state) => !!state.token},
+    actions: {
+        setAuth(data){
+            this.token = data.token
+            this.user = data.user
+            this.permissions = data.user.permissions || []
+            localStorage.setItem('token', data.token)
+            localStorage.setItem('user', JSON.stringify(data.user))
+            localStorage.setItem('permissions', JSON.stringify(data.user.permissions || []))
+        },
+        logout() {
+            this.token = null
+            this.user = null
+            this.permissions = []
+            localStorage.removeItem('token')
+            localStorage.removeItem('user')
+            localStorage.removeItem('permissions')
+            localStorage.removeItem('usuario')
+        },
+        async initializeAuth() {
+            const token = localStorage.getItem('token')
+
+            if(!token) return
+
+            try {
+                this.token = token
+                const response = await meRequest()
+
+                this.user = response.user
+
+                this,this.permissions = response.user.permissions || []
+            } catch (error) {
+                this.logout()
+            }
+        }
     }
 })

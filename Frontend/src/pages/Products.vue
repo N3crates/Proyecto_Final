@@ -81,7 +81,7 @@ function showSuccess(msg) { success.value = msg; setTimeout(() => success.value 
 async function loadProducts() {
   loading.value = true; error.value = null
   try { products.value = await getProducts() }
-  catch (e) { error.value = 'Error al cargar productos' }
+  catch (e) { error.value = getErrorMessage(e, 'Error al cargar producto')}
   finally { loading.value = false }
 }
 
@@ -92,7 +92,7 @@ async function handleSubmit(payload) {
     else { await updateProduct(payload.id, payload); showSuccess('Producto actualizado correctamente') }
     productModal.value.close()
     await loadProducts()
-  } catch (e) { error.value = 'Error al guardar producto' }
+  } catch (e) { error.value = getErrorMessage(e, 'Error al guradar producto') }
   finally { saving.value = false }
 }
 
@@ -105,7 +105,7 @@ async function handleDelete() {
     showSuccess('Producto eliminado correctamente')
     confirmDialog.value.close()
     await loadProducts()
-  } catch (e) { error.value = 'Error al eliminar producto' }
+  } catch (e) { error.value = getErrorMessage(e, 'Error al eliminar producto') }
   finally { saving.value = false; selectedProduct.value = null }
 }
 

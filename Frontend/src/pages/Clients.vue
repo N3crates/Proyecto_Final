@@ -79,7 +79,7 @@ function showSuccess(msg) { success.value = msg; setTimeout(() => success.value 
 async function loadClients() {
   loading.value = true; error.value = null
   try { clients.value = await getClients() }
-  catch (e) { error.value = 'Error al cargar clientes' }
+  catch (e) { error.value = getErrorMessage(e, 'Error al cargar cliente')}
   finally { loading.value = false }
 }
 
@@ -90,7 +90,7 @@ async function handleSubmit(payload) {
     else { await updateClient(payload.id, payload); showSuccess('Cliente actualizado correctamente') }
     clientModal.value.close()
     await loadClients()
-  } catch (e) { error.value = 'Error al guardar cliente' }
+  } catch (e) { error.value = getErrorMessage(e, 'Error al guardar cliente') }
   finally { saving.value = false }
 }
 
@@ -103,7 +103,7 @@ async function handleDelete() {
     showSuccess('Cliente eliminado correctamente')
     confirmDialog.value.close()
     await loadClients()
-  } catch (e) { error.value = 'Error al eliminar cliente' }
+  } catch (e) { error.value = getErrorMessage(e, 'Error al eliminar cliente') }
   finally { saving.value = false; selectedClient.value = null }
 }
 

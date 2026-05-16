@@ -1,8 +1,11 @@
 import api from './api.js'
 
-export async function getUsers() {
-  const { data } = await api.get('/users')
-  return data.items
+export const getUsers = async (params = {}) => {
+  const cleanParams = Object.fromEntries(
+    Object.entries(params).filter(([_, v]) => v !== '' && v !== null && v !== undefined)
+  )
+  const response = await api.get('/users', { params: cleanParams })
+  return response.data
 }
 
 export async function createUser(payload) {

@@ -38,6 +38,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 import { loginRequest } from '../services/authService'
+import { getErrorMessage } from '../utils/errorHandler'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -56,11 +57,13 @@ async function onSubmit() {
       password: password.value
     }
     const data = await loginRequest(credentials)
-    authStore.setToken(data.token)
+    console.log(data)
+    authStore.setAuth(data)
     localStorage.setItem('usuario', data.user.usuario)
+    localStorage.setItem('permissions', JSON.stringify(data.user.permissions) )
     router.push('/dashboard')
   } catch (e) {
-    error.value = e.response?.data?.message || 'Error al iniciar sesión'
+    error.value = getErrorMessage(e, 'Error al iniciar sesión')
     console.error(e)
 
   } finally {
