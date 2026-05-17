@@ -12,11 +12,11 @@
 <script setup>
     defineProps({
         title:{
-            type: string,
+            type: String,
             default: 'Sin datos'
         },
         description:{
-            type: string,
+            type: String,
             default: 'No hay información disponible'
         }
     })

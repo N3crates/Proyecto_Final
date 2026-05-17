@@ -41,11 +41,11 @@
             <tr v-for="product in products" :key="product.id">
               <td>{{ product.nombre || product.name }}</td>
               <td>{{ product.categoria || product.category || '-' }}</td>
-              <td>{{ product.precio || product.price || '-' }}</td>
+              <td>{{ product.precioVenta || product.precio || product_price || '-' }}</td>
               <td>{{ product.stock ?? '-' }}</td>
               <td>
-                <span class="badge" :class="product.active ? 'badge-success' : 'badge-error'">
-                  {{ product.active ? 'Activo' : 'Inactivo' }}
+                <span class="badge" :class="product.activo ? 'badge-success' : 'badge-error'">
+                  {{ product.activo ? 'Activo' : 'Inactivo' }}
                 </span>
               </td>
               <td class="flex gap-2">

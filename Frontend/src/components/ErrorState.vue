@@ -1,16 +1,16 @@
 <template>
-    <alert class="alert-error">
+    <div class="alert alert-error">
         <span>
             {{ message }}
         </span>
-    </alert>
+    </div>
 </template>
 
 <script setup>
     defineProps({
         message:{
-            type: string,
+            type: String,
             default: 'Ocurrio un error'
         }
-    })
+})
 </script>

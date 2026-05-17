@@ -116,7 +116,16 @@ async function handleSubmit(payload) {
     validEmail(payload.email)
   ]
   if(payload.mode === 'create'){
-    validations.push(required(payload.password, 'contraseña'), minLength(payload.password, 6, 'contraseña'))
+    const passwordRequired = required(payload.password, 'Contraseña')
+    if(passwordRequired){
+      error.value = passwordRequired
+      return
+    }
+    const passwordMinLength = minLength(payload.password, 6, 'Contraseña')
+    if(passwordMinLength){
+      error.value = passwordMinLength
+      return
+    }
   }
   const firstError = validations.find(v => v)
   if(firstError){
@@ -131,11 +140,13 @@ async function handleSubmit(payload) {
       apellido: payload.apellido?.trim(),
       usuario: payload.usuario?.trim(),
       email: payload.email?.trim(),
-      password: payload.password,
       roleId: payload.roleId,
       activo: payload.activo
     }
- 
+
+    if(payload.password){
+      cleanPayload.password = payload.password
+    }
     if (payload.mode === 'create') {
       await create(cleanPayload)
       notifications.add('Usuario creado correctamente', 'success')
