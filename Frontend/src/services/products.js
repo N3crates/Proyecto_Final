@@ -1,9 +1,11 @@
 import api from './api.js'
 import { ENDPOINTS } from '../constants/endpoints.js'
 
-export async function getProducts(params={}) {
-  const { data } = await api.get(ENDPOINTS.PRODUCTS.BASE, {params})
-  return data.items
+export async function getProducts(params = {}) {
+  const cleanParams = Object.fromEntries(Object.entries(params).filter(([_, value]) => value !== '' && value !== null && value !== undefined)
+  )
+  const { data } = await api.get(ENDPOINTS.PRODUCTS.BASE,{params: cleanParams})
+  return data
 }
 
 export async function createProduct(payload) {

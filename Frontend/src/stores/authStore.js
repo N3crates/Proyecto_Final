@@ -5,7 +5,7 @@ export const useAuthStore = defineStore('auth', {
     state: () => ({
         token: localStorage.getItem('token') || null,
         user: JSON.parse(localStorage.getItem('user') || 'null'),
-        permissions: JSON.parse(localStorage.getItem('permissions') || '[]')
+        permissions: JSON.parse(localStorage.getItem('permissions') || '[]'), authLoading: false
     }),
     getters: {isAuthenticated: (state) => !!state.token},
     actions: {
@@ -26,9 +26,14 @@ export const useAuthStore = defineStore('auth', {
             localStorage.removeItem('permissions')
         },
         async initializeAuth() {
+            this.authLoading = true
             const token = localStorage.getItem('token')
 
-            if(!token) return
+            if(!token) {
+                this.logout()
+                this.authLoading = false
+                return
+            }
 
             try {
                 this.token = token
@@ -39,6 +44,8 @@ export const useAuthStore = defineStore('auth', {
                 localStorage.setItem('permissions', JSON.stringify(response.user.permissions || []))
             } catch (error) {
                 this.logout()
+            }finally{
+                this.authLoading = false
             }
         }
     }

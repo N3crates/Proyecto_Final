@@ -28,38 +28,28 @@ export function useUsers() {
         }
     }
 
-    const create = async (payload) => {
+    const executeAction = async(callback) => {
         try {
-            const response = await createUser(payload)
+            const response = await callback()
             await loadUsers()
             return response
         } catch (e) {
             console.error(e)
             throw e
         }
+    }
+
+    const create = async (payload) => {
+        return executeAction(() => createUser(payload))
     }
 
     const update = async (id, payload) => {
-        try {
-            const response = await updateUser(id, payload)
-            await loadUsers()
-            return response
-        } catch (e) {
-            console.error(e)
-            throw e
-        }
+        return executeAction(() => updateUser(id, payload))
     }
 
     const remove = async (id) => {
-        try {
-            const response = await deleteUser(id)
-            await loadUsers()
-            return response
-        } catch (e) {
-            console.error(e)
-            throw e
-        }
+        return executeAction(() => deleteUser(id))
     }
 
-    return { users, loading, error, loadUsers, create, update, remove, page, limit, search }
+    return { users, loading, error, initialized, loadUsers, create, update, remove, page, limit, search }
 }

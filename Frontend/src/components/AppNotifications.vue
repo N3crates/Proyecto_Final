@@ -4,7 +4,7 @@
     <div
       v-for="notification in notifications"
       :key="notification.id"
-      class="alert"
+      class="alert shadow-lg max-w-sm transition-all duration-300"
       :class="{
 
         'alert-success':

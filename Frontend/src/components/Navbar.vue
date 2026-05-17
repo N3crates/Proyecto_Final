@@ -4,12 +4,12 @@
       <span class="text-xl font-bold">DEMEN ERP</span>
     </div>
     <div class="flex-none gap-2">
-      <div class="text-rigth">
+      <div class="text-right">
         <p class="font-semibold text-sm">
-          {{ useAuthStore.user?.nombre }}
+          {{ authStore.user?.nombre }}
         </p>
         <p class="text-xs opacity-60">
-          {{ useAuthStore.user?.role }}
+          {{ authStore.user?.role }}
         </p>
       </div>
       <span class="text-sm opacity-60 hidden md:block">Bienvenido</span>

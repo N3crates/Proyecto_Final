@@ -6,6 +6,7 @@ export function required(value, fieldName) {
 }
 
 export function validEmail(email) {
+    if(!email) return null
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     
     if(!emailRegex.test(email)){
@@ -15,6 +16,9 @@ export function validEmail(email) {
 }
 
 export function minLength(value, min, fieldName){
+    if(!value){
+        return `${fieldName} es obligatorio`
+    }
     if(value.length < min){
         return `${fieldName} debe tener al menos ${min} caracteres`
     }

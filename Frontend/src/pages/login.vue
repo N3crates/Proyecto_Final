@@ -48,24 +48,28 @@ const loading = ref(false)
 const error = ref(null)
 
 async function onSubmit() {
-  loading.value = true
   error.value = null
+  if(!usuario.value){
+    error.value = 'El usuario es obligatorio'
+    return
+  }
+  if(!password.value){
+    error.value = 'El password es obligatorio'
+    return
+  }
+  loading.value = true
 
   try {
     const credentials = {
-      usuario: usuario.value,
+      usuario: usuario.value.trim(),
       password: password.value
     }
     const data = await loginRequest(credentials)
-    console.log(data)
     authStore.setAuth(data)
-    localStorage.setItem('usuario', data.user.usuario)
-    localStorage.setItem('permissions', JSON.stringify(data.user.permissions) )
     router.push('/dashboard')
   } catch (e) {
-    error.value = getErrorMessage(e, 'Error al iniciar sesión')
     console.error(e)
-
+    error.value = getErrorMessage(e, 'Error al iniciar sesión')
   } finally {
     loading.value = false
   }

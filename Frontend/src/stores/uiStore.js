@@ -2,14 +2,22 @@ import { defineStore } from "pinia";
 
 export const useUiStore = defineStore('ui', {
     state: () => ({
-        loading: false
+        loadingCount: 0
     }),
+    getters: {
+        loading: (state) => state.loadingCount > 0
+    },
     actions: {
         startLoading(){
-            this.loading = true
+            this.loadingCount++
         },
         stopLoading(){
-            this.loading = false
+            if(this.loadingCount > 0) {
+                this.loadingCount--
+            }
+        },
+        resetLoading(){
+            this.loadingCount = 0
         }
     }
 })

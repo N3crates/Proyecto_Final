@@ -3,6 +3,7 @@ import { useUiStore } from "../stores/uiStore"
 
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL,
+    timeout: 10000,
     headers: {
         'Content-Type': 'application/json'
     }
@@ -11,11 +12,10 @@ api.interceptors.request.use(
     (config) => {
         const uiStore = useUiStore()
         uiStore.startLoading()
-        const token =
-            localStorage.getItem('token')
+        const token = localStorage.getItem('token')
         if (token) {
-            config.headers.Authorization =
-                `Bearer ${token}`
+            config.headers = config.headers || {}
+            config.headers.Authorization = `Bearer ${token}`
         }
         return config
     },
@@ -39,7 +39,10 @@ api.interceptors.response.use(
             localStorage.removeItem('token')
             localStorage.removeItem('user')
             localStorage.removeItem('permissions')
-            window.location.href = '/login'
+            
+            if(window.location.pathname !== '/login'){
+                window.location.href = '/login'
+            }
         }
         return Promise.reject(error)
     }

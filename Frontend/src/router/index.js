@@ -1,7 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router"
-
 import { useAuthStore } from "../stores/authStore"
-
 import login from "../pages/login.vue"
 import Dashboard from "../pages/Dashboard.vue"
 import Users from "../pages/Users.vue"
@@ -114,6 +112,11 @@ const routes = [
       requiresAuth: true,
       permission: 'audit:view'
     }
+  },
+
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/dashboard'
   }
 ]
 
@@ -129,6 +132,10 @@ router.beforeEach((to, from, next) => {
     !authStore.isAuthenticated
   ) {
     next('/login')
+    return
+  }
+  if(to.path === '/login' && authStore.isAuthenticated){
+    next('/dashboard')
     return
   }
   if (

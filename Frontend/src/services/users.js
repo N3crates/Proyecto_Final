@@ -5,8 +5,8 @@ export const getUsers = async (params = {}) => {
   const cleanParams = Object.fromEntries(
     Object.entries(params).filter(([_, v]) => v !== '' && v !== null && v !== undefined)
   )
-  const response = await api.get(ENDPOINTS.USERS.BASE, { params: cleanParams })
-  return response.data
+  const { data } = await api.get(ENDPOINTS.USERS.BASE, { params: cleanParams })
+  return data
 }
 
 export async function createUser(payload) {
@@ -20,7 +20,7 @@ export async function updateUser(id, payload) {
 }
 
 export async function toggleUserActive(id) {
-  const { data } = await api.patch(`${ENDPOINTS.USERS.BASE}}/${id}/toggle-active`)
+  const { data } = await api.patch(`${ENDPOINTS.USERS.BASE}/${id}/toggle-active`)
   return data.item
 }
 

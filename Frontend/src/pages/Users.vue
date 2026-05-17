@@ -24,8 +24,6 @@
       </div>
  
       <ErrorState v-if="error" :message="error" />
-      <div v-if="success" class="alert alert-success"><span>{{ success }}</span></div>
- 
       <div class="rounded-2xl border border-base-300 bg-base-100 shadow-lg overflow-x-auto">
         <table class="table w-full">
           <thead>
@@ -38,8 +36,16 @@
             </tr>
           </thead>
           <tbody>
-            <LoadingState v-if="loading" />
-            <EmptyState v-else-if="users.length === 0" title="Sin usuarios" description="No hay usuarios registrados" />
+            <tr v-if="loading">
+              <td colspan="5" class="text-center py-8">
+                <span class="loading loading-spinner"></span>
+              </td>
+            </tr>
+            <tr v-else-if="users.length === 0">
+              <td class="text-center opacity-50 py-8">
+                Sin usuarios registrados
+              </td>
+            </tr>
             <tr v-for="user in users" :key="user.id">
               <td>{{ user.nombre || user.name }}</td>
               <td>{{ user.usuario || user.email }}</td>
@@ -90,21 +96,14 @@ import { useNotificationStore } from '../stores/notificationStore.js'
 import { required, validEmail, minLength } from '../utils/validators.js'
 import EmptyState from '../components/EmptyState.vue'
 import ErrorState from '../components/ErrorState.vue'
-import LoadingState from '../components/LoadingState.vue'
  
 const { users, loading, error, page, limit, search, loadUsers, create, update, remove } = useUsers()
 const saving = ref(false)
-const success = ref(null)
 const selectedUser = ref(null)
 const userModal = ref(null)
 const confirmDialog = ref(null)
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const notifications = useNotificationStore()
- 
-function showSuccess(msg) {
-  success.value = msg
-  setTimeout(() => { success.value = null }, 3000)
-}
  
 async function handleSubmit(payload) {
   error.value = null
@@ -142,7 +141,7 @@ async function handleSubmit(payload) {
       notifications.add('Usuario creado correctamente', 'success')
     } else {
       await update(payload.id, cleanPayload)
-      showSuccess('Usuario actualizado correctamente')
+      notifications.add('Usuario actualizado correctamente', 'success')
     }
     userModal.value.close()
   } catch (e) {
@@ -163,7 +162,7 @@ async function handleDelete() {
   error.value = null
   try {
     await remove(selectedUser.value.id)
-    showSuccess('Usuario eliminado correctamente')
+    notifications.add('Usuario eliminado correctamente', 'success')
     confirmDialog.value.close()
   } catch (e) {
     console.error(e)

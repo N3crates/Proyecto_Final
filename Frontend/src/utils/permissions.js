@@ -7,11 +7,14 @@ export function hasPermission(permission) {
   ) {
     return true
   }
-  return authStore.permissions.includes(
-    permission
-  )
+  return (authStore.permissions || []).includes(permission)
 }
-  
+
+export function isAdmin() {
+  const authStore = useAuthStore()
+  return (authStore.user?.role === 'ADMIN')
+}
+
 export function hasRole(role) {
   const authStore = useAuthStore()
   return (authStore.user?.role === role)
