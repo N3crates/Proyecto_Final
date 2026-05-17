@@ -51,8 +51,8 @@
               <td>{{ user.usuario || user.email }}</td>
               <td>{{ user.rol || '-' }}</td>
               <td>
-                <span class="badge" :class="user.active ? 'badge-success' : 'badge-error'">
-                  {{ user.active ? 'Activo' : 'Inactivo' }}
+                <span class="badge" :class="user.activo ? 'badge-success' : 'badge-error'">
+                  {{ user.activo ? 'Activo' : 'Inactivo' }}
                 </span>
               </td>
               <td class="flex gap-2">

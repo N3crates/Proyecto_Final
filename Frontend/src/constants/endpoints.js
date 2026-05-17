@@ -14,5 +14,8 @@ export const ENDPOINTS = {
     },
     SUPPLIERS: {
         BASE: '/suppliers'
+    },
+    ROLES: {
+        BASE: '/roles'
     }
 }
