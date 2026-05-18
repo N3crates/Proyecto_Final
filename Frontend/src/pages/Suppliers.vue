@@ -8,12 +8,15 @@
             <h1 class="text-2xl font-bold">Proveedores</h1>
             <p class="text-sm opacity-70">Administra los proveedores del sistema ERP.</p>
           </div>
-          <button class="btn btn-primary" @click="supplierModal.open()">+ Nuevo Proveedor</button>
+          <button v-if="hasPermission('suppliers:create')" class="btn btn-primary" @click="supplierModal.open()">+ Nuevo Proveedor</button>
+        </div>
+        <div class="flex gap-3 mt-4">
+          <input v-model="search" @input="debounceSearch" class="input input-bordered" placeholder="Buscar proveedor..." />
+          <button class="btn btn-primary" @click="doSearch">Buscar</button>
         </div>
       </div>
 
-      <div v-if="error" class="alert alert-error"><span>{{ error }}</span></div>
-      <div v-if="success" class="alert alert-success"><span>{{ success }}</span></div>
+      <ErrorState v-if="error" :message="error" />
 
       <div class="rounded-2xl border border-base-300 bg-base-100 shadow-lg overflow-x-auto">
         <table class="table w-full">
@@ -22,33 +25,44 @@
               <th>Nombre</th>
               <th>Email</th>
               <th>Teléfono</th>
+              <th>Giro</th>
               <th>Estado</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="loading">
-              <td colspan="5" class="text-center py-8"><span class="loading loading-spinner"></span></td>
+              <td colspan="6" class="text-center py-8"><span class="loading loading-spinner"></span></td>
             </tr>
             <tr v-else-if="suppliers.length === 0">
-              <td colspan="5" class="text-center opacity-50 py-8">Sin proveedores registrados</td>
+              <td colspan="6"><EmptyState title="Sin proveedores" description="No hay proveedores registrados" /></td>
             </tr>
             <tr v-for="supplier in suppliers" :key="supplier.id">
-              <td>{{ supplier.nombre || supplier.name }}</td>
-              <td>{{ supplier.email }}</td>
-              <td>{{ supplier.telefono || supplier.phone || '-' }}</td>
+              <td>{{ supplier.nombre }}</td>
+              <td>{{ supplier.email || '-' }}</td>
+              <td>{{ supplier.telefono || '-' }}</td>
+              <td>{{ supplier.giro || '-' }}</td>
               <td>
-                <span class="badge" :class="supplier.active ? 'badge-success' : 'badge-error'">
-                  {{ supplier.active ? 'Activo' : 'Inactivo' }}
+                <span class="badge" :class="supplier.activo ? 'badge-success' : 'badge-error'">
+                  {{ supplier.activo ? 'Activo' : 'Inactivo' }}
                 </span>
               </td>
               <td class="flex gap-2">
-                <button class="btn btn-sm btn-warning" @click="supplierModal.open(supplier)">Editar</button>
-                <button class="btn btn-sm btn-error" @click="openDelete(supplier)">Eliminar</button>
+                <button v-if="hasPermission('suppliers:update')" class="btn btn-sm btn-warning" @click="supplierModal.open(supplier)">Editar</button>
+                <button v-if="hasPermission('suppliers:update')" class="btn btn-sm" :class="supplier.activo ? 'btn-neutral' : 'btn-success'" @click="handleToggle(supplier)">
+                  {{ supplier.activo ? 'Desactivar' : 'Activar' }}
+                </button>
+                <button v-if="hasPermission('suppliers:delete')" class="btn btn-sm btn-error" @click="openDelete(supplier)">Eliminar</button>
               </td>
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <div class="flex justify-between items-center mt-4">
+        <button class="btn btn-sm" @click="previousPage" :disabled="page <= 1">Anterior</button>
+        <span>Página {{ page }}</span>
+        <button class="btn btn-sm" @click="nextPage">Siguiente</button>
       </div>
 
     </div>
@@ -60,52 +74,82 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { debounce } from 'lodash'
 import AdminLayout from '../layouts/AdminLayout.vue'
 import SupplierModal from '../components/SupplierModal.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
-import { getSuppliers, createSupplier, updateSupplier, deleteSupplier } from '../services/suppliers.js'
+import EmptyState from '../components/EmptyState.vue'
+import ErrorState from '../components/ErrorState.vue'
+import { hasPermission } from '../utils/permissions.js'
+import { useSuppliers } from '../composables/useSuppliers.js'
+import { getErrorMessage } from '../utils/errorHandler.js'
+import { useNotificationStore } from '../stores/notificationStore.js'
+import { required } from '../utils/validators.js'
 
-const suppliers = ref([])
-const loading = ref(false)
+const { suppliers, loading, error, page, search, loadSuppliers, create, update, toggleActive, remove } = useSuppliers()
 const saving = ref(false)
-const error = ref(null)
-const success = ref(null)
 const selectedSupplier = ref(null)
 const supplierModal = ref(null)
 const confirmDialog = ref(null)
-
-function showSuccess(msg) { success.value = msg; setTimeout(() => success.value = null, 3000) }
-
-async function loadSuppliers() {
-  loading.value = true; error.value = null
-  try { suppliers.value = await getSuppliers() }
-  catch (e) { error.value = 'Error al cargar proveedores' }
-  finally { loading.value = false }
-}
+const notifications = useNotificationStore()
 
 async function handleSubmit(payload) {
-  saving.value = true; error.value = null
+  error.value = null
+  const validations = [required(payload.nombre, 'nombre')]
+  const firstError = validations.find(v => v)
+  if (firstError) { error.value = firstError; return }
+
+  saving.value = true
   try {
-    if (payload.mode === 'create') { await createSupplier(payload); showSuccess('Proveedor creado correctamente') }
-    else { await updateSupplier(payload.id, payload); showSuccess('Proveedor actualizado correctamente') }
+    const cleanPayload = {
+      nombre: payload.nombre?.trim(),
+      rfc: payload.rfc?.trim() || null,
+      email: payload.email?.trim() || null,
+      telefono: payload.telefono?.trim() || null,
+      direccion: payload.direccion?.trim() || null,
+      contacto: payload.contacto?.trim() || null,
+      giro: payload.giro?.trim() || null,
+      notas: payload.notas?.trim() || null,
+    }
+    if (payload.mode === 'create') { await create(cleanPayload); notifications.add('Proveedor creado correctamente', 'success') }
+    else { await update(payload.id, cleanPayload); notifications.add('Proveedor actualizado correctamente', 'success') }
     supplierModal.value.close()
-    await loadSuppliers()
-  } catch (e) { error.value = 'Error al guardar proveedor' }
-  finally { saving.value = false }
+  } catch (e) {
+    error.value = getErrorMessage(e, 'Error al guardar proveedor')
+  } finally {
+    saving.value = false
+  }
+}
+
+async function handleToggle(supplier) {
+  try {
+    await toggleActive(supplier.id, !supplier.activo)
+    notifications.add(`Proveedor ${supplier.activo ? 'desactivado' : 'activado'} correctamente`, 'success')
+  } catch (e) {
+    error.value = getErrorMessage(e, 'Error al cambiar estado')
+  }
 }
 
 function openDelete(supplier) { selectedSupplier.value = supplier; confirmDialog.value.open() }
 
 async function handleDelete() {
-  saving.value = true; error.value = null
+  saving.value = true
   try {
-    await deleteSupplier(selectedSupplier.value.id)
-    showSuccess('Proveedor eliminado correctamente')
+    await remove(selectedSupplier.value.id)
+    notifications.add('Proveedor eliminado correctamente', 'success')
     confirmDialog.value.close()
-    await loadSuppliers()
-  } catch (e) { error.value = 'Error al eliminar proveedor' }
-  finally { saving.value = false; selectedSupplier.value = null }
+  } catch (e) {
+    error.value = getErrorMessage(e, 'Error al eliminar proveedor')
+  } finally {
+    saving.value = false
+    selectedSupplier.value = null
+  }
 }
+
+function previousPage() { if (page.value > 1) { page.value--; loadSuppliers() } }
+function nextPage() { page.value++; loadSuppliers() }
+function doSearch() { page.value = 1; loadSuppliers() }
+const debounceSearch = debounce(() => { page.value = 1; loadSuppliers() }, 500)
 
 onMounted(() => loadSuppliers())
 </script>

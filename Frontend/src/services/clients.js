@@ -1,8 +1,8 @@
 import api from './api.js'
 
-export async function getClients() {
-  const { data } = await api.get('/clients')
-  return data.items
+export async function getClients(params = {}) {
+  const { data } = await api.get('/clients', { params })
+  return data
 }
 
 export async function createClient(payload) {
@@ -15,8 +15,8 @@ export async function updateClient(id, payload) {
   return data.item
 }
 
-export async function toggleClientActive(id) {
-  const { data } = await api.patch(`/clients/${id}/toggle-active`)
+export async function toggleClientActive(id, activo) {
+  const { data } = await api.patch(`/clients/${id}/toggle-active`, { activo })
   return data.item
 }
 

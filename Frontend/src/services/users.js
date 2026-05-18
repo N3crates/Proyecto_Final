@@ -1,29 +1,25 @@
 import api from './api.js'
-import { ENDPOINTS } from '../constants/endpoints.js'
 
-export const getUsers = async (params = {}) => {
-  const cleanParams = Object.fromEntries(
-    Object.entries(params).filter(([_, v]) => v !== '' && v !== null && v !== undefined)
-  )
-  const { data } = await api.get(ENDPOINTS.USERS.BASE, { params: cleanParams })
+export async function getUsers(params = {}) {
+  const { data } = await api.get('/users', { params })
   return data
 }
 
 export async function createUser(payload) {
-  const { data } = await api.post(ENDPOINTS.USERS.BASE, payload)
+  const { data } = await api.post('/users', payload)
   return data.item
 }
 
 export async function updateUser(id, payload) {
-  const { data } = await api.patch(`${ENDPOINTS.USERS.BASE}/${id}`, payload)
+  const { data } = await api.patch(`/users/${id}`, payload)
   return data.item
 }
 
-export async function toggleUserActive(id) {
-  const { data } = await api.patch(`${ENDPOINTS.USERS.BASE}/${id}/toggle-active`)
+export async function toggleUserActive(id, activo) {
+  const { data } = await api.patch(`/users/${id}/toggle-active`, { activo })
   return data.item
 }
 
 export async function deleteUser(id) {
-  await api.delete(`${ENDPOINTS.USERS.BASE}/${id}`)
+  await api.delete(`/users/${id}`)
 }

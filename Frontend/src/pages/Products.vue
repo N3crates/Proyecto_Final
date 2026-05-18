@@ -12,20 +12,20 @@
         </div>
         <div class="flex gap-3 mt-4">
           <input v-model="search" @input="debounceSearch" class="input input-bordered" placeholder="Buscar producto..." />
-          <button class="btn btn-primary" @click="loadProducts">Buscar</button>
+          <button class="btn btn-primary" @click="doSearch">Buscar</button>
         </div>
       </div>
 
-      <div v-if="error" class="alert alert-error"><span>{{ error }}</span></div>
-      <div v-if="success" class="alert alert-success"><span>{{ success }}</span></div>
+      <ErrorState v-if="error" :message="error" />
 
       <div class="rounded-2xl border border-base-300 bg-base-100 shadow-lg overflow-x-auto">
         <table class="table w-full">
           <thead>
             <tr>
+              <th>SKU</th>
               <th>Nombre</th>
               <th>Categoría</th>
-              <th>Precio</th>
+              <th>Precio Venta</th>
               <th>Stock</th>
               <th>Estado</th>
               <th>Acciones</th>
@@ -33,16 +33,21 @@
           </thead>
           <tbody>
             <tr v-if="loading">
-              <td colspan="6" class="text-center py-8"><span class="loading loading-spinner"></span></td>
+              <td colspan="7" class="text-center py-8"><span class="loading loading-spinner"></span></td>
             </tr>
             <tr v-else-if="products.length === 0">
-              <td colspan="6" class="text-center opacity-50 py-8">Sin productos registrados</td>
+              <td colspan="7"><EmptyState title="Sin productos" description="No hay productos registrados" /></td>
             </tr>
             <tr v-for="product in products" :key="product.id">
-              <td>{{ product.nombre || product.name }}</td>
-              <td>{{ product.categoria || product.category || '-' }}</td>
-              <td>{{ product.precioVenta || product.precio || product_price || '-' }}</td>
-              <td>{{ product.stock ?? '-' }}</td>
+              <td class="font-mono text-sm">{{ product.sku }}</td>
+              <td>{{ product.nombre }}</td>
+              <td>{{ product.categoria || '-' }}</td>
+              <td>{{ product.precioVenta ?? '-' }}</td>
+              <td>
+                <span :class="product.stock <= product.stockMinimo ? 'text-error font-bold' : ''">
+                  {{ product.stock ?? '-' }}
+                </span>
+              </td>
               <td>
                 <span class="badge" :class="product.activo ? 'badge-success' : 'badge-error'">
                   {{ product.activo ? 'Activo' : 'Inactivo' }}
@@ -50,18 +55,24 @@
               </td>
               <td class="flex gap-2">
                 <button v-if="hasPermission('products:update')" class="btn btn-sm btn-warning" @click="productModal.open(product)">Editar</button>
+                <button v-if="hasPermission('products:update')" class="btn btn-sm" :class="product.activo ? 'btn-neutral' : 'btn-success'" @click="handleToggle(product)">
+                  {{ product.activo ? 'Desactivar' : 'Activar' }}
+                </button>
                 <button v-if="hasPermission('products:delete')" class="btn btn-sm btn-error" @click="openDelete(product)">Eliminar</button>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
+
       <div class="flex justify-between items-center mt-4">
         <button class="btn btn-sm" @click="previousPage" :disabled="page <= 1">Anterior</button>
-        <span>Pagina {{ page }}</span>
+        <span>Página {{ page }}</span>
         <button class="btn btn-sm" @click="nextPage">Siguiente</button>
       </div>
+
     </div>
+
     <ProductModal ref="productModal" :loading="saving" @submit="handleSubmit" />
     <ConfirmDialog ref="confirmDialog" title="Eliminar producto" message="¿Estás seguro de que deseas eliminar este producto?" :loading="saving" @confirm="handleDelete" />
   </AdminLayout>
@@ -69,16 +80,19 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { debounce } from 'lodash'
 import AdminLayout from '../layouts/AdminLayout.vue'
 import ProductModal from '../components/ProductModal.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
-import { debounce } from 'lodash'
-import { useProducts } from '../composables/useProducts.js'
+import EmptyState from '../components/EmptyState.vue'
+import ErrorState from '../components/ErrorState.vue'
 import { hasPermission } from '../utils/permissions.js'
+import { useProducts } from '../composables/useProducts.js'
 import { getErrorMessage } from '../utils/errorHandler.js'
 import { useNotificationStore } from '../stores/notificationStore.js'
+import { required } from '../utils/validators.js'
 
-const { products, loading, error, page, limit, search, loadProducts, create, update, remove} = useProducts()
+const { products, loading, error, page, search, loadProducts, create, update, toggleActive, remove } = useProducts()
 const saving = ref(false)
 const selectedProduct = ref(null)
 const productModal = ref(null)
@@ -86,45 +100,65 @@ const confirmDialog = ref(null)
 const notifications = useNotificationStore()
 
 async function handleSubmit(payload) {
-  saving.value = true; error.value = null
+  error.value = null
+  const validations = [required(payload.sku, 'SKU'), required(payload.nombre, 'nombre')]
+  const firstError = validations.find(v => v)
+  if (firstError) { error.value = firstError; return }
+
+  saving.value = true
   try {
-    if (payload.mode === 'create') { await create(payload); notifications.add('Producto creado correctamente', 'success') }
-    else { await update(payload.id, payload); notifications.add('Producto actualizado correctamente', 'success') }
+    const cleanPayload = {
+      sku: payload.sku?.trim(),
+      nombre: payload.nombre?.trim(),
+      descripcion: payload.descripcion?.trim() || null,
+      categoria: payload.categoria?.trim() || null,
+      unidad: payload.unidad?.trim() || null,
+      marca: payload.marca?.trim() || null,
+      modelo: payload.modelo?.trim() || null,
+      precioCompra: Number(payload.precioCompra) || 0,
+      precioVenta: Number(payload.precioVenta) || 0,
+      stock: Number(payload.stock) || 0,
+      stockMinimo: Number(payload.stockMinimo) || 0,
+    }
+    if (payload.mode === 'create') { await create(cleanPayload); notifications.add('Producto creado correctamente', 'success') }
+    else { await update(payload.id, cleanPayload); notifications.add('Producto actualizado correctamente', 'success') }
     productModal.value.close()
-    await loadProducts()
-  } catch (e) { error.value = getErrorMessage(e, 'Error al guardar producto') }
-  finally { saving.value = false }
+  } catch (e) {
+    error.value = getErrorMessage(e, 'Error al guardar producto')
+  } finally {
+    saving.value = false
+  }
+}
+
+async function handleToggle(product) {
+  try {
+    await toggleActive(product.id, !product.activo)
+    notifications.add(`Producto ${product.activo ? 'desactivado' : 'activado'} correctamente`, 'success')
+  } catch (e) {
+    error.value = getErrorMessage(e, 'Error al cambiar estado')
+  }
 }
 
 function openDelete(product) { selectedProduct.value = product; confirmDialog.value.open() }
 
 async function handleDelete() {
-  saving.value = true; error.value = null
+  saving.value = true
   try {
     await remove(selectedProduct.value.id)
     notifications.add('Producto eliminado correctamente', 'success')
     confirmDialog.value.close()
-    await loadProducts()
-  } catch (e) { error.value = getErrorMessage(e, 'Error al eliminar producto') }
-  finally { saving.value = false; selectedProduct.value = null }
-}
-
-function previousPage(){
-  if(page.value > 1){
-    page.value--
-    loadProducts()
+  } catch (e) {
+    error.value = getErrorMessage(e, 'Error al eliminar producto')
+  } finally {
+    saving.value = false
+    selectedProduct.value = null
   }
 }
 
-function nextPage() {
-  page.value++
-  loadProducts()
-}
-
-const debounceSearch = debounce(() => {
-  page.value = 1
-  loadProducts()
-}, 500)
+function previousPage() { if (page.value > 1) { page.value--; loadProducts() } }
+function nextPage() { page.value++; loadProducts() }
+function doSearch() { page.value = 1; loadProducts() }
+const debounceSearch = debounce(() => { page.value = 1; loadProducts() }, 500)
 
 onMounted(() => loadProducts())
 </script>

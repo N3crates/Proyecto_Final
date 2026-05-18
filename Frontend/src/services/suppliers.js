@@ -1,8 +1,8 @@
 import api from './api.js'
 
-export async function getSuppliers() {
-  const { data } = await api.get('/suppliers')
-  return data.items
+export async function getSuppliers(params = {}) {
+  const { data } = await api.get('/suppliers', { params })
+  return data
 }
 
 export async function createSupplier(payload) {
@@ -15,8 +15,8 @@ export async function updateSupplier(id, payload) {
   return data.item
 }
 
-export async function toggleSupplierActive(id) {
-  const { data } = await api.patch(`/suppliers/${id}/toggle-active`)
+export async function toggleSupplierActive(id, activo) {
+  const { data } = await api.patch(`/suppliers/${id}/toggle-active`, { activo })
   return data.item
 }
 
