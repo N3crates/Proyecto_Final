@@ -9,7 +9,7 @@
           {{ authStore.user?.nombre }}
         </p>
         <p class="text-xs opacity-60">
-          {{ authStore.user?.role }}
+          {{ authStore.user?.role?.nombre || authStore.user?.roleId }}
         </p>
       </div>
       <span class="text-sm opacity-60 hidden md:block">Bienvenido</span>

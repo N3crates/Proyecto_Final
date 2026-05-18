@@ -2,7 +2,7 @@ import api from './api.js'
 
 export async function getRoles(params = {}) {
   const { data } = await api.get('/roles', { params })
-  return data
+  return data.items || []
 }
 
 export async function createRole(payload) {

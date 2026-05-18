@@ -17,28 +17,28 @@
         <div class="card bg-base-200 shadow cursor-pointer hover:shadow-xl transition-shadow" @click="$router.push('/users')">
           <div class="card-body">
             <h3 class="text-sm opacity-60">Usuarios</h3>
-            <p class="text-3xl font-bold">{{ loading ? '...' : summary.totalUsuarios ?? 0 }}</p>
+            <p class="text-3xl font-bold">{{ loading ? '...' : summary.totals?.users ?? 0 }}</p>
           </div>
         </div>
 
         <div class="card bg-base-200 shadow cursor-pointer hover:shadow-xl transition-shadow" @click="$router.push('/clients')">
           <div class="card-body">
             <h3 class="text-sm opacity-60">Clientes</h3>
-            <p class="text-3xl font-bold">{{ loading ? '...' : summary.totalClientes ?? 0 }}</p>
+            <p class="text-3xl font-bold">{{ loading ? '...' : summary.totals?.clients ?? 0 }}</p>
           </div>
         </div>
 
         <div class="card bg-base-200 shadow cursor-pointer hover:shadow-xl transition-shadow" @click="$router.push('/suppliers')">
           <div class="card-body">
             <h3 class="text-sm opacity-60">Proveedores</h3>
-            <p class="text-3xl font-bold">{{ loading ? '...' : summary.totalProveedores ?? 0 }}</p>
+            <p class="text-3xl font-bold">{{ loading ? '...' : summary.totals?.suppliers ?? 0 }}</p>
           </div>
         </div>
 
         <div class="card bg-base-200 shadow cursor-pointer hover:shadow-xl transition-shadow" @click="$router.push('/products')">
           <div class="card-body">
             <h3 class="text-sm opacity-60">Productos</h3>
-            <p class="text-3xl font-bold">{{ loading ? '...' : summary.totalProductos ?? 0 }}</p>
+            <p class="text-3xl font-bold">{{ loading ? '...' : summary.totals?.products ?? 0 }}</p>
           </div>
         </div>
       </div>
@@ -49,8 +49,8 @@
         <div v-if="loading" class="text-center py-4">
           <span class="loading loading-spinner"></span>
         </div>
-        <ul v-else-if="summary.bajoStock?.length > 0" class="space-y-2">
-          <li v-for="p in summary.bajoStock" :key="p.id" class="flex justify-between items-center">
+        <ul v-else-if="summary.lowStockProducts?.length > 0" class="space-y-2">
+          <li v-for="p in summary.lowStockProducts" :key="p.id" class="flex justify-between items-center">
             <span>{{ p.nombre || p.name }}</span>
             <span class="badge badge-warning">Stock: {{ p.stock }}</span>
           </li>
@@ -66,6 +66,7 @@
 import { ref, onMounted } from 'vue'
 import AdminLayout from '../layouts/AdminLayout.vue'
 import api from '../services/api.js'
+import Products from './Products.vue'
 
 const summary = ref({})
 const loading = ref(false)
@@ -76,6 +77,7 @@ async function loadSummary() {
   error.value = null
   try {
     const { data } = await api.get('/dashboard/summary')
+    console.log(data)
     summary.value = data
   } catch (e) {
     error.value = 'Error al cargar el dashboard'

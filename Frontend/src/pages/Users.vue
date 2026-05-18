@@ -49,7 +49,7 @@
             <tr v-for="user in users" :key="user.id">
               <td>{{ user.nombre || user.name }}</td>
               <td>{{ user.usuario || user.email }}</td>
-              <td>{{ user.rol || '-' }}</td>
+              <td>{{ user.rol?.nombre || user.roleId || '-' }}</td>
               <td>
                 <span class="badge" :class="user.activo ? 'badge-success' : 'badge-error'">
                   {{ user.activo ? 'Activo' : 'Inactivo' }}

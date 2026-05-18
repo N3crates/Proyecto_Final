@@ -29,7 +29,7 @@ const routes = [
     component: Dashboard,
     meta: {
       requiresAuth: true,
-      permission: 'dashboard:view'
+      permission: 'dashboard:read'
     }
   },
 
@@ -38,7 +38,7 @@ const routes = [
     component: Users,
     meta: {
       requiresAuth: true,
-      permission: 'users:view'
+      permission: 'users:read'
     }
   },
 
@@ -47,7 +47,7 @@ const routes = [
     component: Roles,
     meta: {
       requiresAuth: true,
-      permission: 'roles:view'
+      permission: 'roles:read'
     }
   },
 
@@ -56,7 +56,7 @@ const routes = [
     component: Permissions,
     meta: {
       requiresAuth: true,
-      permission: 'permissions:view'
+      permission: 'permissions:read'
     }
   },
 
@@ -65,7 +65,7 @@ const routes = [
     component: Clients,
     meta: {
       requiresAuth: true,
-      permission: 'clients:view'
+      permission: 'clients:read'
     }
   },
 
@@ -74,7 +74,7 @@ const routes = [
     component: Suppliers,
     meta: {
       requiresAuth: true,
-      permission: 'suppliers:view'
+      permission: 'suppliers:read'
     }
   },
 
@@ -83,7 +83,7 @@ const routes = [
     component: Products,
     meta: {
       requiresAuth: true,
-      permission: 'products:view'
+      permission: 'products:read'
     }
   },
 
@@ -92,7 +92,7 @@ const routes = [
     component: Inventory,
     meta: {
       requiresAuth: true,
-      permission: 'inventory:view'
+      permission: 'inventory:read'
     }
   },
 
@@ -101,7 +101,7 @@ const routes = [
     component: Recepciones,
     meta: {
       requiresAuth: true,
-      permission: 'recepciones:view'
+      permission: 'recepciones:read'
     }
   },
 
@@ -110,7 +110,7 @@ const routes = [
     component: Audit,
     meta: {
       requiresAuth: true,
-      permission: 'audit:view'
+      permission: 'audit:read'
     }
   },
 
@@ -125,41 +125,33 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to) => {
   const authStore = useAuthStore()
-  if (
-    to.meta.requiresAuth &&
-    !authStore.isAuthenticated
-  ) {
-    next('/login')
-    return
-  }
-  if(to.path === '/login' && authStore.isAuthenticated){
-    next('/dashboard')
-    return
-  }
-  if (
-    authStore.user?.role === 'ADMIN'
-  ) {
-    next()
-    return
+
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    return '/login'
   }
 
-  const requiredPermission =
-    to.meta.permission
+  const roleName = authStore.user?.role?.nombre || authStore.user?.role?.name || authStore.user?.roleId || ''
+  
+  if (
+    roleName === 'ADMIN' ||
+    roleName === 'role_admin'
+  ) {
+    return true
+  }
+
+  const requiredPermission = to.meta.permission
 
   if (requiredPermission) {
-    const hasPermission =
-      authStore.permissions.includes(
-        requiredPermission
-      )
-
+  const hasPermission = authStore.permissions.includes(requiredPermission)
     if (!hasPermission) {
-      next('/dashboard')
-      return
+      if (to.path !== '/login') {
+        return '/login'
+      }
+      return true
     }
   }
-  next()
+  return true
 })
-
 export default router
