@@ -1,8 +1,8 @@
 import api from './api.js'
 
-export async function getRecepciones() {
-  const { data } = await api.get('/recepciones')
-  return data.items
+export async function getRecepciones(params = {}) {
+  const { data } = await api.get('/recepciones', { params })
+  return data
 }
 
 export async function createRecepcion(payload) {
@@ -16,7 +16,7 @@ export async function updateRecepcion(id, payload) {
 }
 
 export async function confirmRecepcion(id) {
-  const { data } = await api.post(`/recepciones/${id}/confirm`)
+  const { data } = await api.patch(`/recepciones/${id}/confirm`)
   return data.item
 }
 

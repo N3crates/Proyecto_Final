@@ -8,21 +8,25 @@
             <h1 class="text-2xl font-bold">Recepciones</h1>
             <p class="text-sm opacity-70">Registro y confirmación de recepciones de productos.</p>
           </div>
-          <button class="btn btn-primary">+ Nueva Recepción</button>
+          <button v-if="hasPermission('recepciones:create')" class="btn btn-primary" @click="recepcionModal.open()">+ Nueva Recepción</button>
+        </div>
+        <div class="flex gap-3 mt-4">
+          <input v-model="search" @input="debounceSearch" class="input input-bordered" placeholder="Buscar recepción..." />
+          <button class="btn btn-primary" @click="doSearch">Buscar</button>
         </div>
       </div>
 
-      <div v-if="error" class="alert alert-error"><span>{{ error }}</span></div>
+      <ErrorState v-if="error" :message="error" />
 
       <div class="rounded-2xl border border-base-300 bg-base-100 shadow-lg overflow-x-auto">
         <table class="table w-full">
           <thead>
             <tr>
-              <th>ID</th>
+              <th>Folio</th>
               <th>Proveedor</th>
+              <th>Fecha</th>
               <th>Productos</th>
               <th>Estado</th>
-              <th>Fecha</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -31,52 +35,135 @@
               <td colspan="6" class="text-center py-8"><span class="loading loading-spinner"></span></td>
             </tr>
             <tr v-else-if="recepciones.length === 0">
-              <td colspan="6" class="text-center opacity-50 py-8">Sin recepciones registradas</td>
+              <td colspan="6"><EmptyState title="Sin recepciones" description="No hay recepciones registradas" /></td>
             </tr>
             <tr v-for="rec in recepciones" :key="rec.id">
-              <td class="font-mono text-xs">{{ rec.id?.slice(0, 8) }}...</td>
-              <td>{{ rec.proveedor || rec.supplierName || '-' }}</td>
-              <td>{{ rec.productos?.length ?? rec.items?.length ?? '-' }}</td>
+              <td class="font-mono text-sm">{{ rec.folio }}</td>
+              <td>{{ rec.supplierNombre || rec.supplierId || '-' }}</td>
+              <td>{{ rec.fecha ? new Date(rec.fecha).toLocaleDateString() : '-' }}</td>
+              <td>{{ rec.items?.length || 0 }} productos</td>
               <td>
-                <span class="badge" :class="rec.estado === 'confirmado' || rec.status === 'confirmed' ? 'badge-success' : 'badge-warning'">
-                  {{ rec.estado || rec.status || 'Borrador' }}
+                <span class="badge" :class="rec.status === 'CONFIRMED' ? 'badge-success' : 'badge-warning'">
+                  {{ rec.status === 'CONFIRMED' ? 'Confirmado' : 'Borrador' }}
                 </span>
               </td>
-              <td>{{ rec.fecha ? new Date(rec.fecha).toLocaleDateString() : '-' }}</td>
               <td class="flex gap-2">
-                <button class="btn btn-sm btn-success">Confirmar</button>
-                <button class="btn btn-sm btn-warning">Editar</button>
-                <button class="btn btn-sm btn-error">Eliminar</button>
+                <button
+                  v-if="hasPermission('recepciones:update') && rec.status !== 'CONFIRMED'"
+                  class="btn btn-sm btn-success"
+                  @click="handleConfirm(rec)"
+                >Confirmar</button>
+                <button
+                  v-if="hasPermission('recepciones:update') && rec.status !== 'CONFIRMED'"
+                  class="btn btn-sm btn-warning"
+                  @click="recepcionModal.open(rec)"
+                >Editar</button>
+                <button
+                  v-if="hasPermission('recepciones:delete') && rec.status !== 'CONFIRMED'"
+                  class="btn btn-sm btn-error"
+                  @click="openDelete(rec)"
+                >Eliminar</button>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
 
+      <div class="flex justify-between items-center mt-4">
+        <button class="btn btn-sm" @click="previousPage" :disabled="page <= 1">Anterior</button>
+        <span>Página {{ page }}</span>
+        <button class="btn btn-sm" @click="nextPage">Siguiente</button>
+      </div>
+
     </div>
+
+    <RecepcionModal ref="recepcionModal" :loading="saving" @submit="handleSubmit" />
+    <ConfirmDialog ref="confirmDialog" title="Eliminar recepción" message="¿Estás seguro de que deseas eliminar esta recepción?" :loading="saving" @confirm="handleDelete" />
   </AdminLayout>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { debounce } from 'lodash'
 import AdminLayout from '../layouts/AdminLayout.vue'
-import { getRecepciones } from '../services/recepciones.js'
+import RecepcionModal from '../components/RecepcionModal.vue'
+import ConfirmDialog from '../components/ConfirmDialog.vue'
+import EmptyState from '../components/EmptyState.vue'
+import ErrorState from '../components/ErrorState.vue'
+import { hasPermission } from '../utils/permissions.js'
+import { useRecepciones } from '../composables/useRecepciones.js'
+import { getErrorMessage } from '../utils/errorHandler.js'
+import { useNotificationStore } from '../stores/notificationStore.js'
 
-const recepciones = ref([])
-const loading = ref(false)
-const error = ref(null)
+const { recepciones, loading, error, page, search, loadRecepciones, create, update, confirm, remove } = useRecepciones()
+const saving = ref(false)
+const selectedRec = ref(null)
+const recepcionModal = ref(null)
+const confirmDialog = ref(null)
+const notifications = useNotificationStore()
 
-async function loadRecepciones() {
-  loading.value = true
+async function handleSubmit(payload) {
   error.value = null
+  if (!payload.supplierId) { error.value = 'Selecciona un proveedor'; return }
+  if (!payload.folio) { error.value = 'El folio es obligatorio'; return }
+  if (!payload.fecha) { error.value = 'La fecha es obligatoria'; return }
+  if (!payload.items?.length) { error.value = 'Agrega al menos un producto'; return }
+
+  saving.value = true
   try {
-    recepciones.value = await getRecepciones()
+    const cleanPayload = {
+      supplierId: payload.supplierId,
+      folio: payload.folio.trim(),
+      fecha: payload.fecha,
+      comentarios: payload.comentarios?.trim() || null,
+      items: payload.items.map(i => ({
+        productId: i.productId,
+        cantidad: Number(i.cantidad),
+        costoUnitario: Number(i.costoUnitario)
+      }))
+    }
+    if (payload.mode === 'create') { await create(cleanPayload); notifications.add('Recepción creada correctamente', 'success') }
+    else { await update(payload.id, cleanPayload); notifications.add('Recepción actualizada correctamente', 'success') }
+    recepcionModal.value.close()
   } catch (e) {
-    error.value = 'Error al cargar recepciones'
+    error.value = getErrorMessage(e, 'Error al guardar recepción')
   } finally {
-    loading.value = false
+    saving.value = false
   }
 }
+
+async function handleConfirm(rec) {
+  saving.value = true
+  try {
+    await confirm(rec.id)
+    notifications.add('Recepción confirmada correctamente', 'success')
+  } catch (e) {
+    error.value = getErrorMessage(e, 'Error al confirmar recepción')
+  } finally {
+    saving.value = false
+  }
+}
+
+function openDelete(rec) { selectedRec.value = rec; confirmDialog.value.open() }
+
+async function handleDelete() {
+  saving.value = true
+  try {
+    await remove(selectedRec.value.id)
+    notifications.add('Recepción eliminada correctamente', 'success')
+    confirmDialog.value.close()
+  } catch (e) {
+    error.value = getErrorMessage(e, 'Error al eliminar recepción')
+  } finally {
+    saving.value = false
+    selectedRec.value = null
+  }
+}
+
+function previousPage() { if (page.value > 1) { page.value--; loadRecepciones() } }
+function nextPage() { page.value++; loadRecepciones() }
+function doSearch() { page.value = 1; loadRecepciones() }
+const debounceSearch = debounce(() => { page.value = 1; loadRecepciones() }, 500)
 
 onMounted(() => loadRecepciones())
 </script>
