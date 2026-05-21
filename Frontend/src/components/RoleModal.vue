@@ -67,7 +67,6 @@ async function loadPermissions() {
   loadingPerms.value = true
   try {
     const response = await getPermissions({ limit: 100 })
-    console.log(response)
     allPermissions.value = response || []
   } finally {
     loadingPerms.value = false
@@ -77,7 +76,7 @@ async function loadPermissions() {
 async function open(selected = null) {
   mode.value = selected ? 'edit' : 'create'
   form.value = selected
-    ? { nombre: selected.nombre, descripcion: selected.descripcion || '', permissions: selected.permissions || [] }
+    ? { id: selected.id, nombre: selected.nombre, descripcion: selected.descripcion || '', permissions: selected.permissions || [] }
     : { nombre: '', descripcion: '', permissions: [] }
   dialogRef.value.showModal()
   await loadPermissions()
