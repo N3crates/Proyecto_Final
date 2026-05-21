@@ -15,7 +15,7 @@ export function useRoles() {
     error.value = null
     try {
       const response = await getRoles({ page: page.value, limit: limit.value, q: search.value })
-      roles.value = response.items || []
+      roles.value = response || []
     } catch (e) {
       error.value = e.response?.data?.message || 'Error al cargar roles'
     } finally {

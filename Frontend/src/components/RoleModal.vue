@@ -12,15 +12,17 @@
           <div v-if="loadingPerms" class="text-center py-4">
             <span class="loading loading-spinner"></span>
           </div>
-          <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-1 max-h-60 overflow-y-auto border border-base-300 rounded-lg p-3">
-            <div v-for="perm in permissionsByModule" :key="perm.code">
-              <template v-if="perm.isHeader">
-                <p class="text-xs font-bold uppercase opacity-50 mt-2">{{ perm.modulo }}</p>
-              </template>
-              <label v-else class="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" class="checkbox checkbox-sm" :value="perm.code" v-model="form.permissions" />
-                <span class="text-sm">{{ perm.nombre }}</span>
-              </label>
+          <div v-else class="space-y-4 max-h-72 overflow-y-auto border-base-300 rounded-xl p-4 bg-base-200/30">
+            <div v-for="module in groupedModules" :key="module.modulo" class="rounded-lg border-base-300 bg-base-100 p-3">
+                <h4 class="text-sm font-bold uppercase opacity-60 mb-3">
+                  {{ module.modulo }}
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <label v-for="perm in module.permissions" :key="perm.code" class="flex items-center gap-3 cursor-pointer rounded-lg px-2 py-2 hover:bg-base-200 transition-colors">
+                    <input type="checkbox" class="checkbox checkbox-sm" :value="perm.code" v-model="form.permissions" />
+                    <span class="text-sm">{{ perm.nombre }}</span>
+                  </label>
+                </div>
             </div>
           </div>
         </div>
@@ -50,25 +52,23 @@ const loadingPerms = ref(false)
 const allPermissions = ref([])
 const form = ref({ nombre: '', descripcion: '', permissions: [] })
 
-const permissionsByModule = computed(() => {
+const groupedModules = computed(() => {
   const grouped = {}
   allPermissions.value.forEach(p => {
-    if (!grouped[p.modulo]) grouped[p.modulo] = []
+    if (!grouped[p.modulo]) {
+      grouped[p.modulo] = []
+    }
     grouped[p.modulo].push(p)
   })
-  const result = []
-  Object.keys(grouped).sort().forEach(modulo => {
-    result.push({ isHeader: true, modulo })
-    grouped[modulo].forEach(p => result.push(p))
-  })
-  return result
+  return Object.keys(grouped).sort().map(modulo => ({modulo, permissions: grouped[modulo]}))
 })
 
 async function loadPermissions() {
   loadingPerms.value = true
   try {
     const response = await getPermissions({ limit: 100 })
-    allPermissions.value = response.items || []
+    console.log(response)
+    allPermissions.value = response || []
   } finally {
     loadingPerms.value = false
   }
