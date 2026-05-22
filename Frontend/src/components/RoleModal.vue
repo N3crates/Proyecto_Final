@@ -3,26 +3,51 @@
     <div class="modal-box max-w-2xl">
       <h3 class="font-bold text-lg">{{ mode === 'create' ? 'Nuevo Rol' : 'Editar Rol' }}</h3>
 
-      <div class="space-y-3 mt-4">
+      <div class="space-y-4 mt-4">
         <input v-model="form.nombre" class="input input-bordered w-full" placeholder="Nombre del rol (obligatorio)" />
         <textarea v-model="form.descripcion" class="textarea textarea-bordered w-full" placeholder="Descripción"></textarea>
 
         <div>
-          <p class="text-sm font-semibold mb-2">Permisos</p>
-          <div v-if="loadingPerms" class="text-center py-4">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-sm font-semibold">Permisos</p>
+            <span class="text-xs opacity-50">{{ form.permissions.length }} seleccionados</span>
+          </div>
+
+          <div v-if="loadingPerms" class="text-center py-6">
             <span class="loading loading-spinner"></span>
           </div>
-          <div v-else class="space-y-4 max-h-72 overflow-y-auto border-base-300 rounded-xl p-4 bg-base-200/30">
-            <div v-for="module in groupedModules" :key="module.modulo" class="rounded-lg border-base-300 bg-base-100 p-3">
-                <h4 class="text-sm font-bold uppercase opacity-60 mb-3">
-                  {{ module.modulo }}
-                </h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <label v-for="perm in module.permissions" :key="perm.code" class="flex items-center gap-3 cursor-pointer rounded-lg px-2 py-2 hover:bg-base-200 transition-colors">
-                    <input type="checkbox" class="checkbox checkbox-sm" :value="perm.code" v-model="form.permissions" />
-                    <span class="text-sm">{{ perm.nombre }}</span>
-                  </label>
-                </div>
+
+          <div v-else class="max-h-80 overflow-y-auto space-y-3 pr-1">
+            <div v-for="module in groupedModules" :key="module.modulo" class="border border-base-300 rounded-xl overflow-hidden">
+              
+              <!-- Header del módulo -->
+              <div class="bg-base-200 px-4 py-2 flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider">{{ module.modulo }}</span>
+                <button type="button" class="text-xs opacity-60 hover:opacity-100" @click="toggleModule(module)">
+                  {{ isModuleFullySelected(module) ? 'Deseleccionar todo' : 'Seleccionar todo' }}
+                </button>
+              </div>
+
+              <!-- Permisos del módulo -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-base-200">
+                <label
+                  v-for="perm in module.permissions"
+                  :key="perm.code"
+                  class="flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-base-200/50 transition-colors"
+                >
+                  <input
+                    type="checkbox"
+                    class="checkbox checkbox-sm checkbox-primary mt-0.5 shrink-0"
+                    :value="perm.code"
+                    v-model="form.permissions"
+                  />
+                  <div>
+                    <p class="text-sm font-medium leading-tight">{{ perm.nombre }}</p>
+                    <p class="text-xs opacity-50 mt-0.5">{{ perm.code }}</p>
+                  </div>
+                </label>
+              </div>
+
             </div>
           </div>
         </div>
@@ -55,19 +80,33 @@ const form = ref({ nombre: '', descripcion: '', permissions: [] })
 const groupedModules = computed(() => {
   const grouped = {}
   allPermissions.value.forEach(p => {
-    if (!grouped[p.modulo]) {
-      grouped[p.modulo] = []
-    }
+    if (!grouped[p.modulo]) grouped[p.modulo] = []
     grouped[p.modulo].push(p)
   })
-  return Object.keys(grouped).sort().map(modulo => ({modulo, permissions: grouped[modulo]}))
+  return Object.keys(grouped).sort().map(modulo => ({ modulo, permissions: grouped[modulo] }))
 })
+
+function isModuleFullySelected(module) {
+  return module.permissions.every(p => form.value.permissions.includes(p.code))
+}
+
+function toggleModule(module) {
+  if (isModuleFullySelected(module)) {
+    form.value.permissions = form.value.permissions.filter(
+      code => !module.permissions.find(p => p.code === code)
+    )
+  } else {
+    const newCodes = module.permissions.map(p => p.code)
+    const merged = [...new Set([...form.value.permissions, ...newCodes])]
+    form.value.permissions = merged
+  }
+}
 
 async function loadPermissions() {
   loadingPerms.value = true
   try {
     const response = await getPermissions({ limit: 100 })
-    allPermissions.value = response || []
+    allPermissions.value = response.items || []
   } finally {
     loadingPerms.value = false
   }

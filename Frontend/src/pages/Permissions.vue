@@ -56,7 +56,7 @@ async function loadPermissions() {
   error.value = null
   try {
     const response = await getPermissions({ limit: 100 })
-    permissions.value = response || []
+    permissions.value = response.items || []
   } catch (e) {
     error.value = 'Error al cargar permisos'
   } finally {
