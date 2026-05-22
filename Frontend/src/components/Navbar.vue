@@ -12,7 +12,6 @@
     </div>
 
     <div class="flex-none gap-2 flex items-center">
-      <!-- Toggle tema -->
       <button class="btn btn-ghost btn-sm btn-circle" @click="toggleTheme" :title="isDark ? 'Modo claro' : 'Modo oscuro'">
         <Sun v-if="isDark" class="w-4 h-4" />
         <Moon v-else class="w-4 h-4" />
@@ -45,7 +44,7 @@
             </button>
           </li>
           <li>
-            <button class="text-error" @click="cerrarSesion">
+            <button class="text-error" @click="logoutModal.open()">
               <LogOut class="h-4 w-4" /> Cerrar sesión
             </button>
           </li>
@@ -55,6 +54,7 @@
   </div>
 
   <ProfileModal ref="profileModal" :loading="saving" @submit="handleSubmit" />
+  <ConfirmLogout ref="logoutModal" @confirm="cerrarSesion" />
 </template>
 
 <script setup>
@@ -63,6 +63,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 import { useNotificationStore } from '../stores/notificationStore'
 import ProfileModal from './ProfileModal.vue'
+import ConfirmLogout from './ConfirmLogout.vue'
 import api from '../services/api.js'
 import { Menu, Sun, Moon, UserCircle, LogOut } from 'lucide-vue-next'
 
@@ -73,6 +74,7 @@ const route = useRoute()
 const authStore = useAuthStore()
 const notifications = useNotificationStore()
 const profileModal = ref(null)
+const logoutModal = ref(null)
 const saving = ref(false)
 const isDark = ref(document.documentElement.getAttribute('data-theme') === 'dark')
 
