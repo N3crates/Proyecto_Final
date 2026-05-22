@@ -4,6 +4,9 @@ import App from './App.vue'
 import router from './router'
 import { createPinia } from 'pinia'
 
+const savedTheme = localStorage.getItem('theme') || 'dark'
+document.documentElement.setAttribute('data-theme', savedTheme)
+
 export const pinia = createPinia()
 const app = createApp(App)
 app.use(pinia)
