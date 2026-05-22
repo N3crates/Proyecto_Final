@@ -109,7 +109,7 @@ async function handleSubmit(payload) {
       direccion: payload.direccion?.trim() || null,
       contacto: payload.contacto?.trim() || null,
       giro: payload.giro?.trim() || null,
-      notas: payload.notas?.trim() || null,
+      notas: payload.notas?.trim() || nulSl,
     }
     if (payload.mode === 'create') { await create(cleanPayload); notifications.add('Proveedor creado correctamente', 'success') }
     else { await update(payload.id, cleanPayload); notifications.add('Proveedor actualizado correctamente', 'success') }
