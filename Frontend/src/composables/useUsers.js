@@ -1,5 +1,5 @@
 import { ref } from "vue";
-import { getUsers, createUser, updateUser, deleteUser } from "../services/users";
+import { getUsers, createUser, updateUser, deleteUser, toggleUserActive } from "../services/users";
 
 export function useUsers() {
     const users = ref([])
@@ -9,6 +9,7 @@ export function useUsers() {
     const limit = ref(10)
     const search = ref('')
     const initialized = ref(false)
+    const toggleActive = (id, activo) => executeAction(() => toggleUserActive(id, activo))
 
     const loadUsers = async() => {
         if(loading.value) return
@@ -51,5 +52,5 @@ export function useUsers() {
         return executeAction(() => deleteUser(id))
     }
 
-    return { users, loading, error, initialized, loadUsers, create, update, remove, page, limit, search }
+    return { users, loading, error, initialized, loadUsers, create, update, remove, page, limit, search, toggleActive }
 }

@@ -56,8 +56,10 @@
                 </span>
               </td>
               <td class="flex gap-2">
-                <button v-if="isAdmin()" class="btn btn-sm btn-info">Reset Password</button>
                 <button v-if="hasPermission('users:update')" class="btn btn-sm btn-warning" @click="userModal.open(user)">Editar</button>
+                <button v-if="hasPermission('users:update')" class="btn btn-sm" :class="user.activo ? 'btn-neutral' : 'btn-success'" @click="handleToggleActive(user)">
+                  {{ user.activo ? 'Desactivar' : 'Activar' }}
+                </button>
                 <button v-if="hasPermission('users:delete')" class="btn btn-sm btn-error" @click="openDelete(user)">Eliminar</button>
               </td>
             </tr>
@@ -97,7 +99,7 @@ import { required, validEmail, minLength } from '../utils/validators.js'
 import EmptyState from '../components/EmptyState.vue'
 import ErrorState from '../components/ErrorState.vue'
  
-const { users, loading, error, page, limit, search, loadUsers, create, update, remove } = useUsers()
+const { users, loading, error, page, limit, search, loadUsers, create, update, remove, toggleActive } = useUsers()
 const saving = ref(false)
 const selectedUser = ref(null)
 const userModal = ref(null)
@@ -182,6 +184,10 @@ async function handleDelete() {
     saving.value = false
     selectedUser.value = null
   }
+}
+
+async function handleToggleActive(user) {
+  await toggleActive(user.id, !user.activo)
 }
  
 function previousPage() {

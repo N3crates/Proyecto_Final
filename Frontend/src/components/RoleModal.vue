@@ -2,11 +2,9 @@
   <dialog ref="dialogRef" class="modal">
     <div class="modal-box max-w-2xl">
       <h3 class="font-bold text-lg">{{ mode === 'create' ? 'Nuevo Rol' : 'Editar Rol' }}</h3>
-
       <div class="space-y-4 mt-4">
         <input v-model="form.nombre" class="input input-bordered w-full" placeholder="Nombre del rol (obligatorio)" />
         <textarea v-model="form.descripcion" class="textarea textarea-bordered w-full" placeholder="Descripción"></textarea>
-
         <div>
           <div class="flex items-center justify-between mb-2">
             <p class="text-sm font-semibold">Permisos</p>
@@ -19,40 +17,26 @@
 
           <div v-else class="max-h-80 overflow-y-auto space-y-3 pr-1">
             <div v-for="module in groupedModules" :key="module.modulo" class="border border-base-300 rounded-xl overflow-hidden">
-              
-              <!-- Header del módulo -->
               <div class="bg-base-200 px-4 py-2 flex items-center justify-between">
                 <span class="text-xs font-bold uppercase tracking-wider">{{ module.modulo }}</span>
                 <button type="button" class="text-xs opacity-60 hover:opacity-100" @click="toggleModule(module)">
                   {{ isModuleFullySelected(module) ? 'Deseleccionar todo' : 'Seleccionar todo' }}
                 </button>
               </div>
-
-              <!-- Permisos del módulo -->
               <div class="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-base-200">
                 <label
-                  v-for="perm in module.permissions"
-                  :key="perm.code"
-                  class="flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-base-200/50 transition-colors"
-                >
-                  <input
-                    type="checkbox"
-                    class="checkbox checkbox-sm checkbox-primary mt-0.5 shrink-0"
-                    :value="perm.code"
-                    v-model="form.permissions"
-                  />
+                  v-for="perm in module.permissions" :key="perm.code" class="flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-base-200/50 transition-colors">
+                  <input type="checkbox" class="checkbox checkbox-sm checkbox-primary mt-0.5 shrink-0" :value="perm.code" v-model="form.permissions"/>
                   <div>
                     <p class="text-sm font-medium leading-tight">{{ perm.nombre }}</p>
                     <p class="text-xs opacity-50 mt-0.5">{{ perm.code }}</p>
                   </div>
                 </label>
               </div>
-
             </div>
           </div>
         </div>
       </div>
-
       <div class="modal-action">
         <button class="btn btn-ghost" @click="cancel">Cancelar</button>
         <button class="btn btn-primary" :disabled="loading" @click="submit">
