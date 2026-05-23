@@ -30,13 +30,13 @@
           </div>
         </div>
 
-        <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-2xl z-50 w-56 p-2 shadow-lg border border-base-300 mt-1">
-          <li class="menu-title px-3 py-2">
-            <div>
-              <p class="font-semibold text-sm">{{ authStore.user?.nombre }} {{ authStore.user?.apellido }}</p>
-              <p class="text-xs opacity-50">{{ authStore.user?.email }}</p>
-            </div>
-          </li>
+        <ul tabindex="0" class="dropdown-content menu bg-base-100 text-base-content rounded-2xl z-50 w-56 p-2 shadow-lg border border-base-300 mt-1">
+        <li class="menu-title px-3 py-2">
+        <div>
+        <p class="font-semibold text-sm text-base-content">{{ authStore.user?.nombre }} {{ authStore.user?.apellido }}</p>
+        <p class="text-xs opacity-50 text-base-content">{{ authStore.user?.email }}</p>
+        </div>
+        </li>
           <div class="divider my-1"></div>
           <li>
             <button @click="profileModal.open()">
