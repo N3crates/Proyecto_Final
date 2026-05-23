@@ -1,5 +1,5 @@
 <template>
-  <aside class="w-64 min-h-screen bg-base-200 p-4 flex flex-col">
+  <aside class="w-52 min-h-screen bg-base-200 text-base-content p-4 flex flex-col">
     <ul class="menu gap-1 flex-1">
       <li v-if="hasPermission('dashboard:read')">
         <RouterLink to="/dashboard" :class="isActive('/dashboard') ? 'bg-base-300 font-semibold' : ''" @click="$emit('close')">

@@ -1,5 +1,5 @@
 <template>
-  <div class="navbar bg-base-100 shadow-md px-4">
+  <div class="navbar bg-indigo-950 text-white shadow-md px-4">
     <div class="flex-none md:hidden">
       <button class="btn btn-ghost btn-sm" @click="$emit('toggle-sidebar')">
         <Menu class="h-5 w-5" />
