@@ -57,7 +57,42 @@
         </ul>
         <p v-else class="text-center opacity-50">Sin productos con bajo stock</p>
       </div>
-
+      <div class="rounded-2xl border border-base-300 bg-base-100 shadow-lg p-6">
+        <h2 class="text-lg font-bold mb-4">Actividad reciente</h2>
+        <div v-if="loading" class="text-center py-4">
+        <span class="loading loading-spinner"></span>
+      </div>
+      <div v-else-if="recentAudit.length" class="space-y-3">
+        <div v-for="item in recentAudit" :key="item.id" class="flex items-center justify-between rounded-xl border border-base-300 p-3">
+          <div>
+            <p class="font-semibold">{{ item.action || item.accion }}</p>
+            <p class="text-sm opacity-60">{{ item.module || item.modulo }}</p>
+          </div>
+          <div class="text-right">
+            <p class="text-sm">{{ item.userName || item.usuario || 'Sistema' }}</p>
+          </div>
+        </div>
+      </div>
+        <p v-else class="text-center opacity-50">Sin actividad reciente</p>
+      </div>
+      <div class="rounded-2xl border border-base-300 bg-base-100 shadow-lg p-6">
+        <h2 class="text-lg font-bold mb-4">Recepciones recientes</h2>
+        <div v-if="loading" class="text-center py-4">
+          <span class="loading loading-spinner"></span>
+        </div>
+        <div v-else-if="summary.recepcionesRecientes?.length" class="space-y-3">
+          <div v-for="recepcion in summary.recepcionesRecientes" :key="recepcion.id" class="flex items-center justify-between rounded-xl border border-base-300 p-3">
+            <div>
+              <p class="font-semibold">{{ recepcion.folio || 'Recepción' }}</p>
+              <p class="text-sm opacity-60">{{ recepcion.proveedorNombre || 'Proveedor' }}</p>
+            </div>
+            <div class="text-right">
+              <span class="badge badge-success">{{ recepcion.estado || 'Confirmada' }}</span>
+            </div>
+          </div>
+        </div>
+        <p v-else class="text-center opacity-50">Sin recepciones recientes</p>
+      </div>
     </div>
   </AdminLayout>
 </template>
@@ -66,11 +101,11 @@
 import { ref, onMounted } from 'vue'
 import AdminLayout from '../layouts/AdminLayout.vue'
 import api from '../services/api.js'
-import Products from './Products.vue'
 
 const summary = ref({})
 const loading = ref(false)
 const error = ref(null)
+const recentAudit = ref([])
 
 async function loadSummary() {
   loading.value = true
@@ -78,6 +113,10 @@ async function loadSummary() {
   try {
     const { data } = await api.get('/dashboard/summary')
     console.log(data)
+
+    const auditResponse = await api.get('/audit?limit=3')
+    recentAudit.value = auditResponse.data.items || []
+
     summary.value = data
   } catch (e) {
     error.value = 'Error al cargar el dashboard'
