@@ -6,7 +6,7 @@ export async function getInventory(params = {}) {
 }
 
 export async function adjustInventory(productId, payload) {
-  const { data } = await api.post(`/inventory/${productId}/adjust`, payload)
+  const { data } = await api.patch(`/inventory/${productId}/adjust`, payload)
   return data
 }
 
