@@ -1,5 +1,5 @@
 <template>
-  <div class="navbar bg-base-100 shadow-md px-4">
+  <div class="navbar bg-indigo-950 text-white shadow-md px-4">
     <div class="flex-none md:hidden">
       <button class="btn btn-ghost btn-sm" @click="$emit('toggle-sidebar')">
         <Menu class="h-5 w-5" />
@@ -30,13 +30,13 @@
           </div>
         </div>
 
-        <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-2xl z-50 w-56 p-2 shadow-lg border border-base-300 mt-1">
-          <li class="menu-title px-3 py-2">
-            <div>
-              <p class="font-semibold text-sm">{{ authStore.user?.nombre }} {{ authStore.user?.apellido }}</p>
-              <p class="text-xs opacity-50">{{ authStore.user?.email }}</p>
-            </div>
-          </li>
+        <ul tabindex="0" class="dropdown-content menu bg-base-100 text-base-content rounded-2xl z-50 w-56 p-2 shadow-lg border border-base-300 mt-1">
+        <li class="menu-title px-3 py-2">
+        <div>
+        <p class="font-semibold text-sm text-base-content">{{ authStore.user?.nombre }} {{ authStore.user?.apellido }}</p>
+        <p class="text-xs opacity-50 text-base-content">{{ authStore.user?.email }}</p>
+        </div>
+        </li>
           <div class="divider my-1"></div>
           <li>
             <button @click="profileModal.open()">

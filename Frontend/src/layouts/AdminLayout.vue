@@ -1,8 +1,9 @@
 <template>
   <div class="flex flex-col min-h-screen">
     <Navbar @toggle-sidebar="sidebarOpen = !sidebarOpen" />
+
     <div class="flex flex-1 relative">
-      <!-- Overlay para cerrar sidebar en móvil -->
+      <!-- Overlay móvil -->
       <div
         v-if="sidebarOpen"
         class="fixed inset-0 bg-black/50 z-20 md:hidden"
@@ -17,7 +18,8 @@
         <Sidebar @close="sidebarOpen = false" />
       </div>
 
-      <main class="flex-1 p-6 bg-base-100 min-w-0">
+      <!-- Contenido principal -->
+      <main class="flex-1 p-6 min-w-0 bg-indigo-300/30">
         <slot />
       </main>
     </div>
