@@ -6,7 +6,7 @@
       <div class="space-y-3 mt-4">
         <input v-model="form.nombre" class="input input-bordered w-full" placeholder="Nombre (obligatorio)" />
         <input v-model="form.rfc" class="input input-bordered w-full" placeholder="RFC" />
-        <input v-model="form.email" type="email" class="input input-bordered w-full" placeholder="Email" />
+        <input v-model="form.email" type="email" class="input input-bordered w-full" placeholder="Email" :disabled="mode === 'edit'" />
         <input v-model="form.telefono" class="input input-bordered w-full" placeholder="Teléfono" />
         <input v-model="form.direccion" class="input input-bordered w-full" placeholder="Dirección" />
         <input v-model="form.contacto" class="input input-bordered w-full" placeholder="Contacto" />

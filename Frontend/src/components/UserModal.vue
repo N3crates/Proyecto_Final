@@ -5,7 +5,7 @@
       <div class="space-y-3 mt-4">
         <input v-model="form.nombre" class="input input-bordered w-full" placeholder="Nombre" />
         <input v-model="form.apellido" class="input input-bordered w-full" placeholder="Apellido" />
-        <input v-model="form.email" type="email" class="input input-bordered w-full" placeholder="Email" />
+        <input v-model="form.email" type="email" class="input input-bordered w-full" placeholder="Email" :disabled="mode === 'edit'"/>
         <input v-model="form.usuario" class="input input-bordered w-full" placeholder="Usuario" />
         <select v-model="form.roleId" class="select select-borderd w-full">
           <option disabled value="">Selecciona un rol</option>
