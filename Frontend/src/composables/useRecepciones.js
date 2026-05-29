@@ -9,6 +9,7 @@ export function useRecepciones() {
   const limit = ref(10)
   const search = ref('')
 
+  // Carga recepciones desde el backend con paginacion y busqueda
   const loadRecepciones = async () => {
     if (loading.value) return
     loading.value = true
@@ -23,10 +24,15 @@ export function useRecepciones() {
     }
   }
 
+  // Ejecuta una accion y recarga la lista al terminar
   const executeAction = async (callback) => {
-    const response = await callback()
-    await loadRecepciones()
-    return response
+    try {
+      const response = await callback()
+      await loadRecepciones()
+      return response
+    } catch (e) {
+      throw e
+    }
   }
 
   const create = (payload) => executeAction(() => createRecepcion(payload))

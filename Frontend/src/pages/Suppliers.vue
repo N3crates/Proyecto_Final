@@ -105,7 +105,7 @@ const notifications = useNotificationStore()
 async function handleSubmit(payload) {
   error.value = null
 
-  // Validacion mínima: nombre obligatorio
+  // Validacion: nombre obligatorio
   const validations = [required(payload.nombre, 'nombre')]
   const firstError = validations.find(v => v)
   if (firstError) { error.value = firstError; return }
@@ -171,7 +171,7 @@ async function handleDelete() {
 function previousPage() { if (page.value > 1) { page.value--; loadSuppliers() } }
 function nextPage() { page.value++; loadSuppliers() }
 
-// Busqueda inmediata (boton) y con debounce (input)
+// Busqueda inmediata (boton) y con debounce
 function doSearch() { page.value = 1; loadSuppliers() }
 const debounceSearch = debounce(() => { page.value = 1; loadSuppliers() }, 500)
 
