@@ -105,8 +105,6 @@ import { getErrorMessage } from '../utils/errorHandler.js'
 import debounce from 'lodash/debounce'
 import { useNotificationStore } from '../stores/notificationStore.js'
 import { required, validEmail, minLength } from '../utils/validators.js'
-import EmptyState from '../components/EmptyState.vue'
-import ErrorState from '../components/ErrorState.vue'
 import { getRoles } from '../services/roles'
  
 const { users, loading, error, page, limit, search, loadUsers, create, update, remove, toggleActive } = useUsers()
@@ -138,14 +136,6 @@ async function handleSubmit(payload) {
     const passwordMinLength = minLength(payload.password, 6, 'Contraseña')
     if (passwordMinLength) { error.value = passwordMinLength; return }
   }
-
-  const validations = [
-    required(payload.nombre, 'nombre'),
-    required(payload.apellido, 'apellido'),
-    required(payload.usuario, 'usuario'),
-    required(payload.email, 'email'),
-    validEmail(payload.email)
-  ]
 
   const firstError = validations.find(v => v)
   if (firstError) { error.value = firstError; return }

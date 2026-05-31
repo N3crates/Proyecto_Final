@@ -73,8 +73,6 @@
       </div>
 
     </div>
-
-<<<<<<< HEAD
     <div class="rounded-2xl border border-base-300 bg-base-100 shadow-lg overflow-x-auto mt-6">
   <div class="p-4">
     <h2 class="text-lg font-bold">Historial de Movimientos</h2>
@@ -125,10 +123,6 @@
     </tbody>
   </table>
 </div>
-
-=======
-    <!-- Modal de ajuste de stock -->
->>>>>>> 13e24a05de49aa636c9311224a8d4c3a78dd4c3e
     <AdjustModal ref="adjustModal" :loading="saving" @submit="handleAdjust" />
   </AdminLayout>
 </template>

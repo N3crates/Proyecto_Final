@@ -90,7 +90,8 @@
           <div v-for="recepcion in summary.recepcionesRecientes" :key="recepcion.id" class="flex items-center justify-between rounded-xl border border-base-300 p-3">
             <div>
               <p class="font-semibold">{{ recepcion.folio || 'Recepción' }}</p>
-              <p class="text-sm opacity-60">{{ recepcion.proveedorNombre || 'Proveedor' }}</p>
+              <p class="text-sm opacity-60">{{ recepcion.supplierNombre || 'Proveedor' }}</p>
+              <p class="text-xs opacity-50">{{ recepcion.fecha || '-' }}</p>
             </div>
             <div class="text-right">
               <span class="badge badge-success">{{ recepcion.estado || 'Confirmada' }}</span>
@@ -122,7 +123,6 @@ async function loadSummary() {
     const { data } = await api.get('/dashboard/summary')
     const auditResponse = await api.get('/audit?limit=3')
     recentAudit.value = auditResponse.data.items || []
-
     summary.value = data
   } catch (e) {
     error.value = 'Error al cargar el dashboard'
