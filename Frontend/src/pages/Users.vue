@@ -108,11 +108,11 @@ import { required, validEmail, minLength } from '../utils/validators.js'
 import { getRoles } from '../services/roles'
  
 const { users, loading, error, page, limit, search, loadUsers, create, update, remove, toggleActive } = useUsers()
-
 const saving = ref(false)       // controla el estado de carga al guardar/eliminar
 const selectedUser = ref(null)  // usuario seleccionado para eliminar
 const userModal = ref(null)     // referencia al modal de crear/editar
 const confirmDialog = ref(null) // referencia al modal de confirmacion
+const roleMap = ref({})
 const notifications = useNotificationStore()
 
 // Valida y envia el usuario al backend, maneja crear y editar
@@ -196,8 +196,8 @@ async function handleToggleActive(user) {
 
 async function loadRoles() {
   try {
-    const roles = await getRoles({ limit: 100 })
-    roleMap.value = Object.fromEntries(roles.map(role => [role.id, role.nombre]))
+    const response = await getRoles({ limit: 100 })
+    roleMap.value = Object.fromEntries((response || []).map(role => [role.id, role.nombre]))
   } catch (e) {
     console.error('Error cargando roles',e)
   }

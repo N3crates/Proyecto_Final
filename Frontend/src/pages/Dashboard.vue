@@ -44,7 +44,7 @@
       </div>
 
       <!-- Productos por debajo de su stock minimo -->
-      <div class="rounded-2xl border border-base-300 bg-base-100 shadow-lg p-6">
+      <div v-if="hasPermission('inventory:read')" class="rounded-2xl border border-base-300 bg-base-100 shadow-lg p-6">
         <h2 class="text-lg font-bold mb-4">Productos con bajo stock</h2>
         <div v-if="loading" class="text-center py-4">
           <span class="loading loading-spinner"></span>
@@ -60,7 +60,7 @@
       </div>
 
       <!-- Actividad reciente tomada del endpoint de auditoria -->
-      <div class="rounded-2xl border border-base-300 bg-base-100 shadow-lg p-6">
+      <div v-if="hasPermission('audit:read')" class="rounded-2xl border border-base-300 bg-base-100 shadow-lg p-6">
         <h2 class="text-lg font-bold mb-4">Actividad reciente</h2>
         <div v-if="loading" class="text-center py-4">
           <span class="loading loading-spinner"></span>
@@ -81,7 +81,7 @@
       </div>
 
       <!-- Recepciones recientes del resumen del dashboard -->
-      <div class="rounded-2xl border border-base-300 bg-base-100 shadow-lg p-6">
+      <div v-if="hasPermission('recepciones:read')" class="rounded-2xl border border-base-300 bg-base-100 shadow-lg p-6">
         <h2 class="text-lg font-bold mb-4">Recepciones recientes</h2>
         <div v-if="loading" class="text-center py-4">
           <span class="loading loading-spinner"></span>
@@ -109,6 +109,7 @@
 import { ref, onMounted } from 'vue'
 import AdminLayout from '../layouts/AdminLayout.vue'
 import api from '../services/api.js'
+import { hasPermission } from '../utils/permissions.js'
 
 const summary = ref({})
 const loading = ref(false)
@@ -119,11 +120,22 @@ const recentAudit = ref([])
 async function loadSummary() {
   loading.value = true
   error.value = null
+
   try {
     const { data } = await api.get('/dashboard/summary')
-    const auditResponse = await api.get('/audit?limit=3')
-    recentAudit.value = auditResponse.data.items || []
     summary.value = data
+
+    try {
+      const auditResponse = await api.get('/audit?limit=3')
+      recentAudit.value = auditResponse.data.items || []
+    } catch (e) {
+      if (e.response?.status !== 403) {
+        console.error(e)
+      }
+
+      recentAudit.value = []
+    }
+
   } catch (e) {
     error.value = 'Error al cargar el dashboard'
   } finally {
