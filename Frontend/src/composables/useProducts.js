@@ -16,7 +16,7 @@ export function useProducts() {
         error.value = null
 
         try {
-            const response = await getProducts({ page: page.value, limit: limit.value, search: search.value})
+            const response = await getProducts({page: page.value, limit: limit.value, q: search.value})
             products.value = response.items || []
         } catch (e) {
             console.error(e)
@@ -42,9 +42,8 @@ export function useProducts() {
     const update = async(id, payload) => {
         return executeAction(() => updateProduct(id, payload))
     }
-    const toggleActive = async(id) => {
-        return executeAction(() => toggleProductActive(id))
-    }
+    const toggleActive = (id, activo) => executeAction(() => (toggleProductActive(id, activo)))
+    
     const remove = async(id) => {
         return executeAction(() => deleteProduct(id))
     }

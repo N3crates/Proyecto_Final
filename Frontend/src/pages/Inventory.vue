@@ -66,6 +66,57 @@
 
     </div>
 
+    <div class="rounded-2xl border border-base-300 bg-base-100 shadow-lg overflow-x-auto mt-6">
+  <div class="p-4">
+    <h2 class="text-lg font-bold">Historial de Movimientos</h2>
+  </div>
+
+  <table class="table w-full">
+    <thead>
+      <tr>
+        <th>Producto</th>
+        <th>Tipo</th>
+        <th>Cantidad</th>
+        <th>Motivo</th>
+        <th>Fecha</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr v-if="movements.length === 0">
+        <td colspan="5" class="text-center py-4">
+          No hay movimientos registrados
+        </td>
+      </tr>
+
+      <tr
+        v-for="movement in movements"
+        :key="movement.id"
+      >
+        <td>{{ movement.productNombre || '-' }}</td>
+
+        <td>
+          <span class="badge">
+            {{ movement.tipo }}
+          </span>
+        </td>
+
+        <td>{{ movement.cantidad }}</td>
+
+        <td>{{ movement.motivo || '-' }}</td>
+
+        <td>
+          {{
+            movement.createdAt
+              ? new Date(movement.createdAt).toLocaleString()
+              : '-'
+          }}
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
     <AdjustModal ref="adjustModal" :loading="saving" @submit="handleAdjust" />
   </AdminLayout>
 </template>
@@ -83,7 +134,7 @@ import { adjustInventory } from '../services/inventory.js'
 import { getErrorMessage } from '../utils/errorHandler.js'
 import { useNotificationStore } from '../stores/notificationStore.js'
 
-const { inventory, loading, error, page, search, loadInventory } = useInventory()
+const {inventory, movements, loading, error, page, search, loadInventory, loadMovements} = useInventory()
 const saving = ref(false)
 const adjustModal = ref(null)
 const notifications = useNotificationStore()
@@ -104,6 +155,7 @@ async function handleAdjust(payload) {
     notifications.add('Inventario ajustado correctamente', 'success')
     adjustModal.value.close()
     await loadInventory()
+    await loadMovements()
   } catch (e) {
     error.value = getErrorMessage(e, 'Error al ajustar inventario')
   } finally {
@@ -116,5 +168,5 @@ function nextPage() { page.value++; loadInventory() }
 function doSearch() { page.value = 1; loadInventory() }
 const debounceSearch = debounce(() => { page.value = 1; loadInventory() }, 500)
 
-onMounted(() => loadInventory())
+onMounted(async() => {await loadInventory(), await loadMovements()})
 </script>

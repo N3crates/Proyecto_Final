@@ -19,6 +19,13 @@ export function useUsers() {
         
         try {
             const response = await getUsers({ page: page.value, limit: limit.value, q: search.value })
+            console.log(
+  JSON.stringify(
+    response.items[0],
+    null,
+    2
+  )
+)
             users.value = response.items || []
         } catch (e) {
             console.error(e)

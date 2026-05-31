@@ -49,7 +49,7 @@
             <tr v-for="user in users" :key="user.id">
               <td>{{ user.nombre || user.name }}</td>
               <td>{{ user.usuario || user.email }}</td>
-              <td>{{ user.rol?.nombre || user.roleId || '-' }}</td>
+              <td>{{ roleMap[user.roleId] || user.roleId || '-' }}</td>
               <td>
                 <span class="badge" :class="user.activo ? 'badge-success' : 'badge-error'">
                   {{ user.activo ? 'Activo' : 'Inactivo' }}
@@ -98,6 +98,7 @@ import { useNotificationStore } from '../stores/notificationStore.js'
 import { required, validEmail, minLength } from '../utils/validators.js'
 import EmptyState from '../components/EmptyState.vue'
 import ErrorState from '../components/ErrorState.vue'
+import { getRoles } from '../services/roles'
  
 const { users, loading, error, page, limit, search, loadUsers, create, update, remove, toggleActive } = useUsers()
 const saving = ref(false)
@@ -106,17 +107,11 @@ const userModal = ref(null)
 const confirmDialog = ref(null)
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const notifications = useNotificationStore()
+const roleMap = ref({})
  
 async function handleSubmit(payload) {
   error.value = null
 
-  const validations = [
-    required(payload.nombre, 'nombre'),
-    required(payload.apellido, 'apellido'),
-    required(payload.usuario, 'usuario'),
-    required(payload.email, 'email'),
-    validEmail(payload.email)
-  ]
   if(payload.mode === 'create'){
     const passwordRequired = required(payload.password, 'Contraseña')
     if(passwordRequired){
@@ -129,6 +124,16 @@ async function handleSubmit(payload) {
       return
     }
   }
+
+  const validations = [
+    required(payload.nombre, 'nombre'),
+    required(payload.apellido, 'apellido'),
+    required(payload.usuario, 'usuario'),
+    required(payload.email, 'email'),
+    validEmail(payload.email)
+  ]
+
+
   const firstError = validations.find(v => v)
   if(firstError){
     error.value = firstError
@@ -189,6 +194,15 @@ async function handleDelete() {
 async function handleToggleActive(user) {
   await toggleActive(user.id, !user.activo)
 }
+
+async function loadRoles() {
+  try {
+    const roles = await getRoles({ limit: 100 })
+    roleMap.value = Object.fromEntries(roles.map(role => [role.id, role.nombre]))
+  } catch (e) {
+    console.error('Error cargando roles',e)
+  }
+}
  
 function previousPage() {
   if (page.value > 1) {
@@ -212,5 +226,5 @@ const debounceSearch = debounce(() => {
   loadUsers()
 }, 500)
  
-onMounted(() => loadUsers())
+onMounted(async() => {await loadRoles(), await loadUsers()})
 </script>

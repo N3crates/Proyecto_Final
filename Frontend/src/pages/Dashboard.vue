@@ -112,7 +112,6 @@ async function loadSummary() {
   error.value = null
   try {
     const { data } = await api.get('/dashboard/summary')
-    console.log(data)
 
     const auditResponse = await api.get('/audit?limit=3')
     recentAudit.value = auditResponse.data.items || []
