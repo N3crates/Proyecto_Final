@@ -55,11 +55,11 @@
         </table>
       </div>
 
-      <!-- Paginacion -->
+      <!-- Paginacion con limite real por totalPages -->
       <div class="flex justify-between items-center mt-4">
         <button class="btn btn-sm" @click="previousPage" :disabled="page <= 1">Anterior</button>
-        <span>Página {{ page }}</span>
-        <button class="btn btn-sm" @click="nextPage">Siguiente</button>
+        <span>Página {{ page }} de {{ totalPages }}</span>
+        <button class="btn btn-sm" @click="nextPage" :disabled="page >= totalPages">Siguiente</button>
       </div>
 
     </div>
@@ -85,31 +85,27 @@ import { useNotificationStore } from '../stores/notificationStore.js'
 import { required } from '../utils/validators.js'
 
 // Composable con estado y acciones de roles
-const { roles, loading, error, page, search, loadRoles, create, update, remove } = useRoles()
+const { roles, loading, error, page, total, totalPages, search, loadRoles, create, update, remove } = useRoles()
 
-const saving = ref(false)       // controla el estado de carga al guardar/eliminar
-const selectedRole = ref(null)  // rol seleccionado para eliminar
-const roleModal = ref(null)     // referencia al modal de crear/editar
-const confirmDialog = ref(null) // referencia al modal de confirmacion
+const saving = ref(false)
+const selectedRole = ref(null)
+const roleModal = ref(null)
+const confirmDialog = ref(null)
 const notifications = useNotificationStore()
 
-// Valida y envia el rol al backend, maneja crear y editar
+// Valida y envia el rol al backend — maneja crear y editar
 async function handleSubmit(payload) {
   error.value = null
-
-  // Validacion: nombre obligatorio
   const firstError = required(payload.nombre, 'nombre')
   if (firstError) { error.value = firstError; return }
 
   saving.value = true
   try {
-    // Normaliza el payload 
     const cleanPayload = {
       nombre: payload.nombre?.trim(),
       descripcion: payload.descripcion?.trim() || null,
       permissions: payload.permissions || []
     }
-
     if (payload.mode === 'create') {
       await create(cleanPayload)
       notifications.add('Rol creado correctamente', 'success')
@@ -125,10 +121,8 @@ async function handleSubmit(payload) {
   }
 }
 
-// Abre el confirm dialog guardando el rol a eliminar
 function openDelete(role) { selectedRole.value = role; confirmDialog.value.open() }
 
-// Ejecuta la eliminacion tras confirmar
 async function handleDelete() {
   saving.value = true
   try {
@@ -143,11 +137,11 @@ async function handleDelete() {
   }
 }
 
-// Navegacion entre paginas
+// Navegacion entre paginas con limite
 function previousPage() { if (page.value > 1) { page.value--; loadRoles() } }
-function nextPage() { page.value++; loadRoles() }
+function nextPage() { if (page.value < totalPages.value) { page.value++; loadRoles() } }
 
-// Busqueda inmediata (boton) y con debounce
+// Busqueda inmediata (boton) y con debounce (input)
 function doSearch() { page.value = 1; loadRoles() }
 const debounceSearch = debounce(() => { page.value = 1; loadRoles() }, 500)
 

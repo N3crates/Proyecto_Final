@@ -54,7 +54,6 @@
                 </span>
               </td>
               <td>
-                <!-- Badge de estado activo/inactivo -->
                 <span class="badge" :class="product.activo ? 'badge-success' : 'badge-error'">
                   {{ product.activo ? 'Activo' : 'Inactivo' }}
                 </span>
@@ -71,11 +70,11 @@
         </table>
       </div>
 
-      <!-- Paginacion -->
+      <!-- Paginacion con limite real por totalPages -->
       <div class="flex justify-between items-center mt-4">
         <button class="btn btn-sm" @click="previousPage" :disabled="page <= 1">Anterior</button>
-        <span>Página {{ page }}</span>
-        <button class="btn btn-sm" @click="nextPage">Siguiente</button>
+        <span>Página {{ page }} de {{ totalPages }}</span>
+        <button class="btn btn-sm" @click="nextPage" :disabled="page >= totalPages">Siguiente</button>
       </div>
 
     </div>
@@ -101,26 +100,24 @@ import { useNotificationStore } from '../stores/notificationStore.js'
 import { required } from '../utils/validators.js'
 
 // Composable con estado y acciones de productos
-const { products, loading, error, page, search, loadProducts, create, update, toggleActive, remove } = useProducts()
+const { products, loading, error, page, total, totalPages, search, loadProducts, create, update, toggleActive, remove } = useProducts()
 
-const saving = ref(false)          // controla el estado de carga al guardar/eliminar
-const selectedProduct = ref(null)  // producto seleccionado para eliminar
-const productModal = ref(null)     // referencia al modal de crear/editar
-const confirmDialog = ref(null)    // referencia al modal de confirmacion
+const saving = ref(false)
+const selectedProduct = ref(null)
+const productModal = ref(null)
+const confirmDialog = ref(null)
 const notifications = useNotificationStore()
 
 // Maneja crear y editar segun el mode que viene del modal
 async function handleSubmit(payload) {
   error.value = null
-
-  // Validacion: SKU y nombre obligatorios
   const validations = [required(payload.sku, 'SKU'), required(payload.nombre, 'nombre')]
   const firstError = validations.find(v => v)
   if (firstError) { error.value = firstError; return }
 
   saving.value = true
   try {
-    // Limpia y normaliza el payload, numeros con fallback a 0, strings vacios a null
+    // Limpia y normaliza el payload — numeros con fallback a 0, strings vacios a null
     const cleanPayload = {
       sku: payload.sku?.trim(),
       nombre: payload.nombre?.trim(),
@@ -134,7 +131,6 @@ async function handleSubmit(payload) {
       stock: Number(payload.stock) || 0,
       stockMinimo: Number(payload.stockMinimo) || 0,
     }
-
     if (payload.mode === 'create') {
       await create(cleanPayload)
       notifications.add('Producto creado correctamente', 'success')
@@ -160,10 +156,8 @@ async function handleToggle(product) {
   }
 }
 
-// Abre el confirm dialog guardando el producto a eliminar
 function openDelete(product) { selectedProduct.value = product; confirmDialog.value.open() }
 
-// Ejecuta la eliminacion tras confirmar
 async function handleDelete() {
   saving.value = true
   try {
@@ -178,11 +172,11 @@ async function handleDelete() {
   }
 }
 
-// Navegacion entre paginas
+// Navegacion entre paginas con limite
 function previousPage() { if (page.value > 1) { page.value--; loadProducts() } }
-function nextPage() { page.value++; loadProducts() }
+function nextPage() { if (page.value < totalPages.value) { page.value++; loadProducts() } }
 
-// Busqueda inmediata (boton) y con debounce
+// Busqueda inmediata (boton) y con debounce (input)
 function doSearch() { page.value = 1; loadProducts() }
 const debounceSearch = debounce(() => { page.value = 1; loadProducts() }, 500)
 

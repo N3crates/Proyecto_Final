@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { getSuppliers, createSupplier, updateSupplier, deleteSupplier, toggleSupplierActive } from '../services/suppliers'
 
 export function useSuppliers() {
@@ -7,17 +7,22 @@ export function useSuppliers() {
   const error = ref(null)
   const page = ref(1)
   const limit = ref(10)
+  const total = ref(0)
   const search = ref('')
-  const initialized = ref(false) // evita mostrar empty state antes de la primera carga
+  const initialized = ref(false)
+
+  // Total de paginas calculado desde el total de registros del backend
+  const totalPages = computed(() => Math.ceil(total.value / limit.value) || 1)
 
   // Carga proveedores desde el backend con paginacion y busqueda
   const loadSuppliers = async () => {
-    if (loading.value) return // evita llamadas duplicadas si ya esta cargando
+    if (loading.value) return
     loading.value = true
     error.value = null
     try {
       const response = await getSuppliers({ page: page.value, limit: limit.value, q: search.value })
       suppliers.value = response.items || []
+      total.value = response.total || 0
     } catch (e) {
       error.value = e.response?.data?.message || 'Error al cargar proveedores'
     } finally {
@@ -42,5 +47,5 @@ export function useSuppliers() {
   const toggleActive = (id, activo) => executeAction(() => toggleSupplierActive(id, activo))
   const remove = (id) => executeAction(() => deleteSupplier(id))
 
-  return { suppliers, loading, error, page, limit, search, loadSuppliers, create, update, toggleActive, remove }
+  return { suppliers, loading, error, page, limit, total, totalPages, search, loadSuppliers, create, update, toggleActive, remove }
 }

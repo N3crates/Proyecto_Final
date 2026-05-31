@@ -71,9 +71,10 @@ const routes = [
     component: Audit,
     meta: { requiresAuth: true, permission: 'audit:read' }
   },
+  // Cualquier ruta desconocida manda al login
   {
     path: '/:pathMatch(.*)*',
-    redirect: '/dashboard'
+    redirect: '/login'
   }
 ]
 
@@ -82,11 +83,11 @@ const router = createRouter({
   routes
 })
 
-// Guard global — se ejecuta antes de cada navegación
+// Guard global — se ejecuta antes de cada navegacion
 router.beforeEach((to) => {
   const authStore = useAuthStore()
 
-  // Si ya está autenticado no tiene caso mostrarle el login
+  // Si ya esta autenticado no tiene caso mostrarle el login
   if (to.path === '/login' && authStore.isAuthenticated) {
     return '/dashboard'
   }
@@ -105,7 +106,8 @@ router.beforeEach((to) => {
   // Verifica que el usuario tenga el permiso requerido por la ruta
   const requiredPermission = to.meta.permission
   if (requiredPermission && !authStore.permissions.includes(requiredPermission)) {
-    // Sin permiso — regresa al dashboard en lugar de /login para no confundir al usuario
+    // Si no tiene permiso para el dashboard evita el loop — deja pasar sin redirigir
+    if (to.path === '/dashboard') return false
     return '/dashboard'
   }
 

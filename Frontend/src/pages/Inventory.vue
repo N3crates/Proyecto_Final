@@ -65,64 +65,16 @@
         </table>
       </div>
 
-      <!-- Paginacion simple -->
+      <!-- Paginacion con limite real por totalPages -->
       <div class="flex justify-between items-center mt-4">
         <button class="btn btn-sm" @click="previousPage" :disabled="page <= 1">Anterior</button>
-        <span>Página {{ page }}</span>
-        <button class="btn btn-sm" @click="nextPage">Siguiente</button>
+        <span>Página {{ page }} de {{ totalPages }}</span>
+        <button class="btn btn-sm" @click="nextPage" :disabled="page >= totalPages">Siguiente</button>
       </div>
 
     </div>
-    <div class="rounded-2xl border border-base-300 bg-base-100 shadow-lg overflow-x-auto mt-6">
-  <div class="p-4">
-    <h2 class="text-lg font-bold">Historial de Movimientos</h2>
-  </div>
 
-  <table class="table w-full">
-    <thead>
-      <tr>
-        <th>Producto</th>
-        <th>Tipo</th>
-        <th>Cantidad</th>
-        <th>Motivo</th>
-        <th>Fecha</th>
-      </tr>
-    </thead>
-
-    <tbody>
-      <tr v-if="movements.length === 0">
-        <td colspan="5" class="text-center py-4">
-          No hay movimientos registrados
-        </td>
-      </tr>
-
-      <tr
-        v-for="movement in movements"
-        :key="movement.id"
-      >
-        <td>{{ movement.productNombre || '-' }}</td>
-
-        <td>
-          <span class="badge">
-            {{ movement.tipo }}
-          </span>
-        </td>
-
-        <td>{{ movement.cantidad }}</td>
-
-        <td>{{ movement.motivo || '-' }}</td>
-
-        <td>
-          {{
-            movement.createdAt
-              ? new Date(movement.createdAt).toLocaleString()
-              : '-'
-          }}
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+    <!-- Modal de ajuste de stock -->
     <AdjustModal ref="adjustModal" :loading="saving" @submit="handleAdjust" />
   </AdminLayout>
 </template>
@@ -140,12 +92,14 @@ import { adjustInventory } from '../services/inventory.js'
 import { getErrorMessage } from '../utils/errorHandler.js'
 import { useNotificationStore } from '../stores/notificationStore.js'
 
-const {inventory, movements, loading, error, page, search, loadInventory, loadMovements} = useInventory()
+// Composable con estado y carga de inventario
+const { inventory, loading, error, page, total, totalPages, search, loadInventory } = useInventory()
+
 const saving = ref(false)
 const adjustModal = ref(null)
 const notifications = useNotificationStore()
 
-//Valida y envia el ajuste de stock al backend
+// Valida y envia el ajuste de stock al backend
 async function handleAdjust(payload) {
   if (!payload.tipo) { error.value = 'Selecciona un tipo de ajuste'; return }
   if (!payload.motivo) { error.value = 'El motivo es obligatorio'; return }
@@ -162,7 +116,6 @@ async function handleAdjust(payload) {
     notifications.add('Inventario ajustado correctamente', 'success')
     adjustModal.value.close()
     await loadInventory()
-    await loadMovements()
   } catch (e) {
     error.value = getErrorMessage(e, 'Error al ajustar inventario')
   } finally {
@@ -170,13 +123,13 @@ async function handleAdjust(payload) {
   }
 }
 
-//Navegacion entre paginas
+// Navegacion entre paginas con limite
 function previousPage() { if (page.value > 1) { page.value--; loadInventory() } }
-function nextPage() { page.value++; loadInventory() }
+function nextPage() { if (page.value < totalPages.value) { page.value++; loadInventory() } }
 
-// Busqueda inmediata (boton) y con debounce
+// Busqueda inmediata (boton) y con debounce (input)
 function doSearch() { page.value = 1; loadInventory() }
 const debounceSearch = debounce(() => { page.value = 1; loadInventory() }, 500)
 
-onMounted(async() => {await loadInventory(), await loadMovements()})
+onMounted(() => loadInventory())
 </script>

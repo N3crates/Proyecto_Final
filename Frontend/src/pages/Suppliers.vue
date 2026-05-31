@@ -47,6 +47,7 @@
               <td>{{ supplier.telefono || '-' }}</td>
               <td>{{ supplier.giro || '-' }}</td>
               <td>
+                <!-- Badge de estado activo/inactivo -->
                 <span class="badge" :class="supplier.activo ? 'badge-success' : 'badge-error'">
                   {{ supplier.activo ? 'Activo' : 'Inactivo' }}
                 </span>
@@ -63,11 +64,11 @@
         </table>
       </div>
 
-      <!-- Paginacion -->
+      <!-- Paginacion con limite real por totalPages -->
       <div class="flex justify-between items-center mt-4">
         <button class="btn btn-sm" @click="previousPage" :disabled="page <= 1">Anterior</button>
-        <span>Página {{ page }}</span>
-        <button class="btn btn-sm" @click="nextPage">Siguiente</button>
+        <span>Página {{ page }} de {{ totalPages }}</span>
+        <button class="btn btn-sm" @click="nextPage" :disabled="page >= totalPages">Siguiente</button>
       </div>
 
     </div>
@@ -93,26 +94,23 @@ import { useNotificationStore } from '../stores/notificationStore.js'
 import { required } from '../utils/validators.js'
 
 // Composable con estado y acciones de proveedores
-const { suppliers, loading, error, page, search, loadSuppliers, create, update, toggleActive, remove } = useSuppliers()
+const { suppliers, loading, error, page, total, totalPages, search, loadSuppliers, create, update, toggleActive, remove } = useSuppliers()
 
-const saving = ref(false)           // controla el estado de carga al guardar/eliminar
-const selectedSupplier = ref(null)  // proveedor seleccionado para eliminar
-const supplierModal = ref(null)     // referencia al modal de crear/editar
-const confirmDialog = ref(null)     // referencia al modal de confirmación
+const saving = ref(false)
+const selectedSupplier = ref(null)
+const supplierModal = ref(null)
+const confirmDialog = ref(null)
 const notifications = useNotificationStore()
 
 // Maneja crear y editar segun el mode que viene del modal
 async function handleSubmit(payload) {
   error.value = null
-
-  // Validacion: nombre obligatorio
   const validations = [required(payload.nombre, 'nombre')]
   const firstError = validations.find(v => v)
   if (firstError) { error.value = firstError; return }
 
   saving.value = true
   try {
-    // Limpia y normaliza el payload antes de enviarlo al backend
     const cleanPayload = {
       nombre: payload.nombre?.trim(),
       rfc: payload.rfc?.trim() || null,
@@ -121,9 +119,8 @@ async function handleSubmit(payload) {
       direccion: payload.direccion?.trim() || null,
       contacto: payload.contacto?.trim() || null,
       giro: payload.giro?.trim() || null,
-      notas: payload.notas?.trim() || null, 
+      notas: payload.notas?.trim() || null,
     }
-
     if (payload.mode === 'create') {
       await create(cleanPayload)
       notifications.add('Proveedor creado correctamente', 'success')
@@ -167,11 +164,11 @@ async function handleDelete() {
   }
 }
 
-// Navegacion entre páginas
+// Navegacion entre paginas con limite
 function previousPage() { if (page.value > 1) { page.value--; loadSuppliers() } }
-function nextPage() { page.value++; loadSuppliers() }
+function nextPage() { if (page.value < totalPages.value) { page.value++; loadSuppliers() } }
 
-// Busqueda inmediata (boton) y con debounce
+// Busqueda inmediata (boton) y con debounce (input)
 function doSearch() { page.value = 1; loadSuppliers() }
 const debounceSearch = debounce(() => { page.value = 1; loadSuppliers() }, 500)
 

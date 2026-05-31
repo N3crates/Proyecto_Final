@@ -52,6 +52,7 @@
               <!-- Fallbacks por si el backend cambia nombres de campo -->
               <td>{{ user.nombre || user.name }}</td>
               <td>{{ user.usuario || user.email }}</td>
+              <!-- Muestra nombre del rol usando el mapa cargado al montar -->
               <td>{{ roleMap[user.roleId] || user.roleId || '-' }}</td>
               <td>
                 <!-- Badge de estado activo/inactivo -->
@@ -71,11 +72,11 @@
         </table>
       </div>
 
-      <!-- Paginacion -->
+      <!-- Paginacion con limite real por totalPages -->
       <div class="flex justify-between items-center mt-4">
         <button class="btn btn-sm" @click="previousPage" :disabled="page <= 1">Anterior</button>
-        <span>Página {{ page }}</span>
-        <button class="btn btn-sm" @click="nextPage">Siguiente</button>
+        <span>Página {{ page }} de {{ totalPages }}</span>
+        <button class="btn btn-sm" @click="nextPage" :disabled="page >= totalPages">Siguiente</button>
       </div>
 
     </div>
@@ -106,16 +107,18 @@ import debounce from 'lodash/debounce'
 import { useNotificationStore } from '../stores/notificationStore.js'
 import { required, validEmail, minLength } from '../utils/validators.js'
 import { getRoles } from '../services/roles'
- 
-const { users, loading, error, page, limit, search, loadUsers, create, update, remove, toggleActive } = useUsers()
+
+// Composable con estado y acciones de usuarios
+const { users, loading, error, page, limit, total, totalPages, search, loadUsers, create, update, remove, toggleActive } = useUsers()
+
 const saving = ref(false)       // controla el estado de carga al guardar/eliminar
 const selectedUser = ref(null)  // usuario seleccionado para eliminar
 const userModal = ref(null)     // referencia al modal de crear/editar
 const confirmDialog = ref(null) // referencia al modal de confirmacion
-const roleMap = ref({})
+const roleMap = ref({})         // mapa id -> nombre de rol para mostrar en la tabla
 const notifications = useNotificationStore()
 
-// Valida y envia el usuario al backend, maneja crear y editar
+// Valida y envia el usuario al backend — maneja crear y editar
 async function handleSubmit(payload) {
   error.value = null
 
@@ -128,9 +131,8 @@ async function handleSubmit(payload) {
     validEmail(payload.email)
   ]
 
-  // Password requerido y con minimo de 6 caracteres 
+  // Password requerido y con minimo de 6 caracteres solo al crear
   if (payload.mode === 'create') {
-
     const passwordRequired = required(payload.password, 'Contraseña')
     if (passwordRequired) { error.value = passwordRequired; return }
     const passwordMinLength = minLength(payload.password, 6, 'Contraseña')
@@ -142,7 +144,7 @@ async function handleSubmit(payload) {
 
   saving.value = true
   try {
-    // Normaliza el payload, password solo se incluye si viene informado
+    // Normaliza el payload — password solo se incluye si viene informado
     const cleanPayload = {
       nombre: payload.nombre?.trim(),
       apellido: payload.apellido?.trim(),
@@ -152,7 +154,7 @@ async function handleSubmit(payload) {
       activo: payload.activo
     }
 
-    // Al editar, el password es opcional
+    // Al editar el password es opcional — solo se envia si el usuario lo escribio
     if (payload.password) cleanPayload.password = payload.password
 
     if (payload.mode === 'create') {
@@ -191,40 +193,31 @@ async function handleDelete() {
 
 // Cambia el estado activo/inactivo del usuario con manejo de error
 async function handleToggleActive(user) {
-  await toggleActive(user.id, !user.activo)
+  try {
+    await toggleActive(user.id, !user.activo)
+    notifications.add(`Usuario ${user.activo ? 'desactivado' : 'activado'} correctamente`, 'success')
+  } catch (e) {
+    error.value = getErrorMessage(e, 'Error al cambiar estado del usuario')
+  }
 }
 
+// Carga el mapa de roles para mostrar nombre en lugar de id en la tabla
 async function loadRoles() {
   try {
     const response = await getRoles({ limit: 100 })
     roleMap.value = Object.fromEntries((response || []).map(role => [role.id, role.nombre]))
   } catch (e) {
-    console.error('Error cargando roles',e)
+    // error silencioso — el roleId se muestra como fallback
   }
 }
- 
-function previousPage() {
-  if (page.value > 1) {
-    page.value--
-    loadUsers()
-  }
-}
- 
-function nextPage() {
-  page.value++
-  loadUsers()
-}
- 
-function doSearch() {
-  page.value = 1
-  loadUsers()
-}
- 
-const debounceSearch = debounce(() => {
-  page.value = 1
-  loadUsers()
-}, 500)
- 
-onMounted(async() => {await loadRoles(), await loadUsers()})
 
+// Navegacion entre paginas con limite
+function previousPage() { if (page.value > 1) { page.value--; loadUsers() } }
+function nextPage() { if (page.value < totalPages.value) { page.value++; loadUsers() } }
+
+// Busqueda inmediata (boton) y con debounce (input)
+function doSearch() { page.value = 1; loadUsers() }
+const debounceSearch = debounce(() => { page.value = 1; loadUsers() }, 500)
+
+onMounted(async () => { await loadRoles(); await loadUsers() })
 </script>

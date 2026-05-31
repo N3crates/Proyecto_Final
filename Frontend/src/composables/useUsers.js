@@ -1,63 +1,51 @@
-import { ref } from "vue";
-import { getUsers, createUser, updateUser, deleteUser, toggleUserActive } from "../services/users";
+import { ref, computed } from 'vue'
+import { getUsers, createUser, updateUser, deleteUser, toggleUserActive } from '../services/users'
 
 export function useUsers() {
-    const users = ref([])
-    const loading = ref(false)
-    const error = ref(null)
-    const page = ref(1)
-    const limit = ref(10)
-    const search = ref('')
-    const initialized = ref(false)
-    const toggleActive = (id, activo) => executeAction(() => toggleUserActive(id, activo))
+  const users = ref([])
+  const loading = ref(false)
+  const error = ref(null)
+  const page = ref(1)
+  const limit = ref(10)
+  const total = ref(0)
+  const search = ref('')
+  const initialized = ref(false)
 
-    const loadUsers = async() => {
-        if(loading.value) return
+  // Total de paginas calculado desde el total de registros del backend
+  const totalPages = computed(() => Math.ceil(total.value / limit.value) || 1)
 
-        loading.value = true
-        error.value = null
-        
-        try {
-            const response = await getUsers({ page: page.value, limit: limit.value, q: search.value })
-            console.log(
-  JSON.stringify(
-    response.items[0],
-    null,
-    2
-  )
-)
-            users.value = response.items || []
-        } catch (e) {
-            console.error(e)
-            error.value = e.response?.data?.message || 'Error al cargar usuarios'
-        } finally {
-            initialized.value = true
-            loading.value = false
-        }
+  // Carga usuarios desde el backend con paginacion y busqueda
+  const loadUsers = async () => {
+    if (loading.value) return
+    loading.value = true
+    error.value = null
+    try {
+      const response = await getUsers({ page: page.value, limit: limit.value, q: search.value })
+      users.value = response.items || []
+      total.value = response.total || 0
+    } catch (e) {
+      error.value = e.response?.data?.message || 'Error al cargar usuarios'
+    } finally {
+      initialized.value = true
+      loading.value = false
     }
+  }
 
-    const executeAction = async(callback) => {
-        try {
-            const response = await callback()
-            await loadUsers()
-            return response
-        } catch (e) {
-            console.error(e)
-            throw e
-        }
+  // Ejecuta una accion y recarga la lista al terminar
+  const executeAction = async (callback) => {
+    try {
+      const response = await callback()
+      await loadUsers()
+      return response
+    } catch (e) {
+      throw e
     }
+  }
 
-    const create = async (payload) => {
-        return executeAction(() => createUser(payload))
-    }
+  const create = (payload) => executeAction(() => createUser(payload))
+  const update = (id, payload) => executeAction(() => updateUser(id, payload))
+  const remove = (id) => executeAction(() => deleteUser(id))
+  const toggleActive = (id, activo) => executeAction(() => toggleUserActive(id, activo))
 
-    const update = async (id, payload) => {
-        return executeAction(() => updateUser(id, payload))
-    }
-
-    const remove = async (id) => {
-        return executeAction(() => deleteUser(id))
-    }
-
-    return { users, loading, error, initialized, loadUsers, create, update, remove, page, limit, search, toggleActive }
+  return { users, loading, error, initialized, page, limit, total, totalPages, search, loadUsers, create, update, remove, toggleActive }
 }

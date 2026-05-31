@@ -1,6 +1,6 @@
 import api from './api.js'
 
-// Obtiener la lista de roles, regresa directamente el array
+// Obtiene la lista de roles — retorna directamente el array
 export async function getRoles(params = {}) {
   const { data } = await api.get('/roles', { params })
   return data.items || []
@@ -18,7 +18,7 @@ export async function updateRole(id, payload) {
   return data.item
 }
 
-// Elimina un rol, el backend valida que no tenga usuarios asignados
+// Elimina un rol — el backend valida que no tenga usuarios asignados
 export async function deleteRole(id) {
   await api.delete(`/roles/${id}`)
 }

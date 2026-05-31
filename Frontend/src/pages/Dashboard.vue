@@ -59,14 +59,14 @@
         <p v-else class="text-center opacity-50">Sin productos con bajo stock</p>
       </div>
 
-      <!-- Actividad reciente tomada del endpoint de auditoria -->
-      <div v-if="hasPermission('audit:read')" class="rounded-2xl border border-base-300 bg-base-100 shadow-lg p-6">
+      <!-- Actividad reciente — queda vacia si el rol no tiene audit:read -->
+      <div class="rounded-2xl border border-base-300 bg-base-100 shadow-lg p-6">
         <h2 class="text-lg font-bold mb-4">Actividad reciente</h2>
         <div v-if="loading" class="text-center py-4">
           <span class="loading loading-spinner"></span>
         </div>
         <div v-else-if="recentAudit.length" class="space-y-3">
-          <!-- Fallbacks por si el backend usa nombres distintos -->
+          <!-- Fallbacks por si el backend usa nombres de campo distintos -->
           <div v-for="item in recentAudit" :key="item.id" class="flex items-center justify-between rounded-xl border border-base-300 p-3">
             <div>
               <p class="font-semibold">{{ item.action || item.accion }}</p>
@@ -116,11 +116,11 @@ const loading = ref(false)
 const error = ref(null)
 const recentAudit = ref([])
 
-// Carga el resumen del dashboard y los ultimos eventos de auditoria 
 async function loadSummary() {
   loading.value = true
   error.value = null
 
+  // Carga el resumen principal, si falla muestra error y para
   try {
     const { data } = await api.get('/dashboard/summary')
     summary.value = data
@@ -140,6 +140,14 @@ async function loadSummary() {
     error.value = 'Error al cargar el dashboard'
   } finally {
     loading.value = false
+  }
+
+  // Auditoria separada
+  try {
+    const auditResponse = await api.get('/audit?limit=3')
+    recentAudit.value = auditResponse.data.items || []
+  } catch {
+    recentAudit.value = []
   }
 }
 

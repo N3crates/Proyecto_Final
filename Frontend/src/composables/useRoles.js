@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { getRoles, createRole, updateRole, deleteRole } from '../services/roles'
 
 export function useRoles() {
@@ -7,7 +7,11 @@ export function useRoles() {
   const error = ref(null)
   const page = ref(1)
   const limit = ref(10)
+  const total = ref(0)
   const search = ref('')
+
+  // Total de paginas calculado desde el total de registros del backend
+  const totalPages = computed(() => Math.ceil(total.value / limit.value) || 1)
 
   // Carga roles desde el backend con paginacion y busqueda
   const loadRoles = async () => {
@@ -15,9 +19,10 @@ export function useRoles() {
     loading.value = true
     error.value = null
     try {
-      // getRoles retorna el array directamente desde el servicio
+      // getRoles ya retorna el array directamente desde el servicio
       const response = await getRoles({ page: page.value, limit: limit.value, q: search.value })
       roles.value = response || []
+      total.value = response.total || 0
     } catch (e) {
       error.value = e.response?.data?.message || 'Error al cargar roles'
     } finally {
@@ -40,5 +45,5 @@ export function useRoles() {
   const update = (id, payload) => executeAction(() => updateRole(id, payload))
   const remove = (id) => executeAction(() => deleteRole(id))
 
-  return { roles, loading, error, page, limit, search, loadRoles, create, update, remove }
+  return { roles, loading, error, page, limit, total, totalPages, search, loadRoles, create, update, remove }
 }

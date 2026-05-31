@@ -43,7 +43,7 @@
             </tr>
             <tr v-for="rec in recepciones" :key="rec.id">
               <td class="font-mono text-sm">{{ rec.folio }}</td>
-              <!-- Fallback p el nombre del proveedor -->
+              <!-- Fallback por si el backend no popula el nombre del proveedor -->
               <td>{{ rec.supplierNombre || rec.supplierId || '-' }}</td>
               <td>{{ rec.fecha ? new Date(rec.fecha).toLocaleDateString() : '-' }}</td>
               <td>{{ rec.items?.length || 0 }} productos</td>
@@ -55,32 +55,20 @@
               </td>
               <td class="flex gap-2">
                 <!-- Acciones solo disponibles si la recepcion no esta confirmada -->
-                <button
-                  v-if="hasPermission('recepciones:update') && rec.status !== 'CONFIRMED'"
-                  class="btn btn-sm btn-success"
-                  @click="handleConfirm(rec)"
-                >Confirmar</button>
-                <button
-                  v-if="hasPermission('recepciones:update') && rec.status !== 'CONFIRMED'"
-                  class="btn btn-sm btn-warning"
-                  @click="recepcionModal.open(rec)"
-                >Editar</button>
-                <button
-                  v-if="hasPermission('recepciones:delete') && rec.status !== 'CONFIRMED'"
-                  class="btn btn-sm btn-error"
-                  @click="openDelete(rec)"
-                >Eliminar</button>
+                <button v-if="hasPermission('recepciones:update') && rec.status !== 'CONFIRMED'" class="btn btn-sm btn-success" @click="handleConfirm(rec)">Confirmar</button>
+                <button v-if="hasPermission('recepciones:update') && rec.status !== 'CONFIRMED'" class="btn btn-sm btn-warning" @click="recepcionModal.open(rec)">Editar</button>
+                <button v-if="hasPermission('recepciones:delete') && rec.status !== 'CONFIRMED'" class="btn btn-sm btn-error" @click="openDelete(rec)">Eliminar</button>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <!-- Paginacion -->
+      <!-- Paginacion con limite real por totalPages -->
       <div class="flex justify-between items-center mt-4">
         <button class="btn btn-sm" @click="previousPage" :disabled="page <= 1">Anterior</button>
-        <span>Página {{ page }}</span>
-        <button class="btn btn-sm" @click="nextPage">Siguiente</button>
+        <span>Página {{ page }} de {{ totalPages }}</span>
+        <button class="btn btn-sm" @click="nextPage" :disabled="page >= totalPages">Siguiente</button>
       </div>
 
     </div>
@@ -104,20 +92,18 @@ import { useRecepciones } from '../composables/useRecepciones.js'
 import { getErrorMessage } from '../utils/errorHandler.js'
 import { useNotificationStore } from '../stores/notificationStore.js'
 
-//Composable con estado y acciones de recepciones
-const { recepciones, loading, error, page, search, loadRecepciones, create, update, confirm, remove } = useRecepciones()
+// Composable con estado y acciones de recepciones
+const { recepciones, loading, error, page, total, totalPages, search, loadRecepciones, create, update, confirm, remove } = useRecepciones()
 
-const saving = ref(false)        // controla el estado de carga al guardar/confirmar/eliminar
-const selectedRec = ref(null)    // recepcion seleccionada para eliminar
-const recepcionModal = ref(null) // referencia al modal de crear/editar
-const confirmDialog = ref(null)  // referencia al modal de confirmacion de eliminacion
+const saving = ref(false)
+const selectedRec = ref(null)
+const recepcionModal = ref(null)
+const confirmDialog = ref(null)
 const notifications = useNotificationStore()
 
-// Valida y envia la recepcion al backend, maneja crear y editar
+// Valida y envia la recepcion al backend — maneja crear y editar
 async function handleSubmit(payload) {
   error.value = null
-
-  // Validaciones obligatorias antes de enviar
   if (!payload.supplierId) { error.value = 'Selecciona un proveedor'; return }
   if (!payload.folio) { error.value = 'El folio es obligatorio'; return }
   if (!payload.fecha) { error.value = 'La fecha es obligatoria'; return }
@@ -137,7 +123,6 @@ async function handleSubmit(payload) {
         costoUnitario: Number(i.costoUnitario)
       }))
     }
-
     if (payload.mode === 'create') {
       await create(cleanPayload)
       notifications.add('Recepción creada correctamente', 'success')
@@ -153,7 +138,7 @@ async function handleSubmit(payload) {
   }
 }
 
-// Confirma la recepcion, despues de esto ya no se puede editar ni eliminar
+// Confirma la recepcion — despues de esto ya no se puede editar ni eliminar
 async function handleConfirm(rec) {
   saving.value = true
   try {
@@ -166,10 +151,8 @@ async function handleConfirm(rec) {
   }
 }
 
-//Abre el confirm dialog guardando la recepcion a eliminar
 function openDelete(rec) { selectedRec.value = rec; confirmDialog.value.open() }
 
-//Ejecuta la eliminacion tras confirmar
 async function handleDelete() {
   saving.value = true
   try {
@@ -184,11 +167,11 @@ async function handleDelete() {
   }
 }
 
-// Navegacion entre paginas
+// Navegacion entre paginas con limite
 function previousPage() { if (page.value > 1) { page.value--; loadRecepciones() } }
-function nextPage() { page.value++; loadRecepciones() }
+function nextPage() { if (page.value < totalPages.value) { page.value++; loadRecepciones() } }
 
-// Busqueda inmediata (boton) y con debounce
+// Busqueda inmediata (boton) y con debounce (input)
 function doSearch() { page.value = 1; loadRecepciones() }
 const debounceSearch = debounce(() => { page.value = 1; loadRecepciones() }, 500)
 
