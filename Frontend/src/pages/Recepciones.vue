@@ -2,6 +2,7 @@
   <AdminLayout>
     <div class="mx-auto max-w-7xl space-y-6">
 
+      <!-- Encabezado con titulo y boton de nueva recepcion -->
       <div class="rounded-2xl border border-base-300 bg-gradient-to-br from-base-200/70 to-base-100 p-6 shadow-lg">
         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
@@ -10,6 +11,8 @@
           </div>
           <button v-if="hasPermission('recepciones:create')" class="btn btn-primary" @click="recepcionModal.open()">+ Nueva Recepción</button>
         </div>
+
+        <!-- Barra de busqueda con debounce y boton manual -->
         <div class="flex gap-3 mt-4">
           <input v-model="search" @input="debounceSearch" class="input input-bordered" placeholder="Buscar recepción..." />
           <button class="btn btn-primary" @click="doSearch">Buscar</button>
@@ -18,6 +21,7 @@
 
       <ErrorState v-if="error" :message="error" />
 
+      <!-- Tabla de recepciones -->
       <div class="rounded-2xl border border-base-300 bg-base-100 shadow-lg overflow-x-auto">
         <table class="table w-full">
           <thead>
@@ -39,15 +43,18 @@
             </tr>
             <tr v-for="rec in recepciones" :key="rec.id">
               <td class="font-mono text-sm">{{ rec.folio }}</td>
+              <!-- Fallback p el nombre del proveedor -->
               <td>{{ rec.supplierNombre || rec.supplierId || '-' }}</td>
               <td>{{ rec.fecha ? new Date(rec.fecha).toLocaleDateString() : '-' }}</td>
               <td>{{ rec.items?.length || 0 }} productos</td>
               <td>
+                <!-- Badge segun estado: CONFIRMED o borrador -->
                 <span class="badge" :class="rec.status === 'CONFIRMED' ? 'badge-success' : 'badge-warning'">
                   {{ rec.status === 'CONFIRMED' ? 'Confirmado' : 'Borrador' }}
                 </span>
               </td>
               <td class="flex gap-2">
+                <!-- Acciones solo disponibles si la recepcion no esta confirmada -->
                 <button
                   v-if="hasPermission('recepciones:update') && rec.status !== 'CONFIRMED'"
                   class="btn btn-sm btn-success"
@@ -69,6 +76,7 @@
         </table>
       </div>
 
+      <!-- Paginacion -->
       <div class="flex justify-between items-center mt-4">
         <button class="btn btn-sm" @click="previousPage" :disabled="page <= 1">Anterior</button>
         <span>Página {{ page }}</span>
@@ -77,6 +85,7 @@
 
     </div>
 
+    <!-- Modales -->
     <RecepcionModal ref="recepcionModal" :loading="saving" @submit="handleSubmit" />
     <ConfirmDialog ref="confirmDialog" title="Eliminar recepción" message="¿Estás seguro de que deseas eliminar esta recepción?" :loading="saving" @confirm="handleDelete" />
   </AdminLayout>
@@ -95,15 +104,20 @@ import { useRecepciones } from '../composables/useRecepciones.js'
 import { getErrorMessage } from '../utils/errorHandler.js'
 import { useNotificationStore } from '../stores/notificationStore.js'
 
+//Composable con estado y acciones de recepciones
 const { recepciones, loading, error, page, search, loadRecepciones, create, update, confirm, remove } = useRecepciones()
-const saving = ref(false)
-const selectedRec = ref(null)
-const recepcionModal = ref(null)
-const confirmDialog = ref(null)
+
+const saving = ref(false)        // controla el estado de carga al guardar/confirmar/eliminar
+const selectedRec = ref(null)    // recepcion seleccionada para eliminar
+const recepcionModal = ref(null) // referencia al modal de crear/editar
+const confirmDialog = ref(null)  // referencia al modal de confirmacion de eliminacion
 const notifications = useNotificationStore()
 
+// Valida y envia la recepcion al backend, maneja crear y editar
 async function handleSubmit(payload) {
   error.value = null
+
+  // Validaciones obligatorias antes de enviar
   if (!payload.supplierId) { error.value = 'Selecciona un proveedor'; return }
   if (!payload.folio) { error.value = 'El folio es obligatorio'; return }
   if (!payload.fecha) { error.value = 'La fecha es obligatoria'; return }
@@ -111,6 +125,7 @@ async function handleSubmit(payload) {
 
   saving.value = true
   try {
+    // Normaliza el payload y convierte cantidades y costos a numeros
     const cleanPayload = {
       supplierId: payload.supplierId,
       folio: payload.folio.trim(),
@@ -122,30 +137,39 @@ async function handleSubmit(payload) {
         costoUnitario: Number(i.costoUnitario)
       }))
     }
-    if (payload.mode === 'create') { await create(cleanPayload); notifications.add('Recepción creada correctamente', 'success') }
-    else { await update(payload.id, cleanPayload); notifications.add('Recepción actualizada correctamente', 'success') }
+
+    if (payload.mode === 'create') {
+      await create(cleanPayload)
+      notifications.add('Recepción creada correctamente', 'success')
+    } else {
+      await update(payload.id, cleanPayload)
+      notifications.add('Recepción actualizada correctamente', 'success')
+    }
     recepcionModal.value.close()
   } catch (e) {
-    error.value = getErrorMessage(e, 'Error al guardar recepción')
+    error.value = getErrorMessage(e, 'Error al guardar recepcion')
   } finally {
     saving.value = false
   }
 }
 
+// Confirma la recepcion, despues de esto ya no se puede editar ni eliminar
 async function handleConfirm(rec) {
   saving.value = true
   try {
     await confirm(rec.id)
     notifications.add('Recepción confirmada correctamente', 'success')
   } catch (e) {
-    error.value = getErrorMessage(e, 'Error al confirmar recepción')
+    error.value = getErrorMessage(e, 'Error al confirmar recepcion')
   } finally {
     saving.value = false
   }
 }
 
+//Abre el confirm dialog guardando la recepcion a eliminar
 function openDelete(rec) { selectedRec.value = rec; confirmDialog.value.open() }
 
+//Ejecuta la eliminacion tras confirmar
 async function handleDelete() {
   saving.value = true
   try {
@@ -153,15 +177,18 @@ async function handleDelete() {
     notifications.add('Recepción eliminada correctamente', 'success')
     confirmDialog.value.close()
   } catch (e) {
-    error.value = getErrorMessage(e, 'Error al eliminar recepción')
+    error.value = getErrorMessage(e, 'Error al eliminar recepcion')
   } finally {
     saving.value = false
     selectedRec.value = null
   }
 }
 
+// Navegacion entre paginas
 function previousPage() { if (page.value > 1) { page.value--; loadRecepciones() } }
 function nextPage() { page.value++; loadRecepciones() }
+
+// Busqueda inmediata (boton) y con debounce
 function doSearch() { page.value = 1; loadRecepciones() }
 const debounceSearch = debounce(() => { page.value = 1; loadRecepciones() }, 500)
 

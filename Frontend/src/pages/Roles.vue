@@ -2,6 +2,7 @@
   <AdminLayout>
     <div class="mx-auto max-w-7xl space-y-6">
 
+      <!-- Encabezado con titulo y boton de nuevo rol -->
       <div class="rounded-2xl border border-base-300 bg-gradient-to-br from-base-200/70 to-base-100 p-6 shadow-lg">
         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
@@ -10,6 +11,8 @@
           </div>
           <button v-if="hasPermission('roles:create')" class="btn btn-primary" @click="roleModal.open()">+ Nuevo Rol</button>
         </div>
+
+        <!-- Barra de busqueda con debounce y boton manual -->
         <div class="flex gap-3 mt-4">
           <input v-model="search" @input="debounceSearch" class="input input-bordered" placeholder="Buscar rol..." />
           <button class="btn btn-primary" @click="doSearch">Buscar</button>
@@ -18,6 +21,7 @@
 
       <ErrorState v-if="error" :message="error" />
 
+      <!-- Tabla de roles -->
       <div class="rounded-2xl border border-base-300 bg-base-100 shadow-lg overflow-x-auto">
         <table class="table w-full">
           <thead>
@@ -39,6 +43,7 @@
               <td class="font-semibold">{{ role.nombre }}</td>
               <td class="opacity-70">{{ role.descripcion || '-' }}</td>
               <td>
+                <!-- Muestra el total de permisos asignados al rol -->
                 <span class="badge badge-outline">{{ role.permissions?.length || 0 }} permisos</span>
               </td>
               <td class="flex gap-2">
@@ -50,6 +55,7 @@
         </table>
       </div>
 
+      <!-- Paginacion -->
       <div class="flex justify-between items-center mt-4">
         <button class="btn btn-sm" @click="previousPage" :disabled="page <= 1">Anterior</button>
         <span>Página {{ page }}</span>
@@ -58,6 +64,7 @@
 
     </div>
 
+    <!-- Modales -->
     <RoleModal ref="roleModal" :loading="saving" @submit="handleSubmit" />
     <ConfirmDialog ref="confirmDialog" title="Eliminar rol" message="¿Estás seguro de que deseas eliminar este rol?" :loading="saving" @confirm="handleDelete" />
   </AdminLayout>
@@ -77,27 +84,39 @@ import { getErrorMessage } from '../utils/errorHandler.js'
 import { useNotificationStore } from '../stores/notificationStore.js'
 import { required } from '../utils/validators.js'
 
+// Composable con estado y acciones de roles
 const { roles, loading, error, page, search, loadRoles, create, update, remove } = useRoles()
-const saving = ref(false)
-const selectedRole = ref(null)
-const roleModal = ref(null)
-const confirmDialog = ref(null)
+
+const saving = ref(false)       // controla el estado de carga al guardar/eliminar
+const selectedRole = ref(null)  // rol seleccionado para eliminar
+const roleModal = ref(null)     // referencia al modal de crear/editar
+const confirmDialog = ref(null) // referencia al modal de confirmacion
 const notifications = useNotificationStore()
 
+// Valida y envia el rol al backend, maneja crear y editar
 async function handleSubmit(payload) {
   error.value = null
+
+  // Validacion: nombre obligatorio
   const firstError = required(payload.nombre, 'nombre')
   if (firstError) { error.value = firstError; return }
 
   saving.value = true
   try {
+    // Normaliza el payload 
     const cleanPayload = {
       nombre: payload.nombre?.trim(),
       descripcion: payload.descripcion?.trim() || null,
       permissions: payload.permissions || []
     }
-    if (payload.mode === 'create') { await create(cleanPayload); notifications.add('Rol creado correctamente', 'success') }
-    else { await update(payload.id, cleanPayload); notifications.add('Rol actualizado correctamente', 'success') }
+
+    if (payload.mode === 'create') {
+      await create(cleanPayload)
+      notifications.add('Rol creado correctamente', 'success')
+    } else {
+      await update(payload.id, cleanPayload)
+      notifications.add('Rol actualizado correctamente', 'success')
+    }
     roleModal.value.close()
   } catch (e) {
     error.value = getErrorMessage(e, 'Error al guardar rol')
@@ -106,8 +125,10 @@ async function handleSubmit(payload) {
   }
 }
 
+// Abre el confirm dialog guardando el rol a eliminar
 function openDelete(role) { selectedRole.value = role; confirmDialog.value.open() }
 
+// Ejecuta la eliminacion tras confirmar
 async function handleDelete() {
   saving.value = true
   try {
@@ -122,8 +143,11 @@ async function handleDelete() {
   }
 }
 
+// Navegacion entre paginas
 function previousPage() { if (page.value > 1) { page.value--; loadRoles() } }
 function nextPage() { page.value++; loadRoles() }
+
+// Busqueda inmediata (boton) y con debounce
 function doSearch() { page.value = 1; loadRoles() }
 const debounceSearch = debounce(() => { page.value = 1; loadRoles() }, 500)
 

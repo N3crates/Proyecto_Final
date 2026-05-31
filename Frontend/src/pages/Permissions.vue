@@ -1,18 +1,22 @@
 <template>
   <AdminLayout>
     <div class="mx-auto max-w-7xl space-y-6">
+
+      <!-- Encabezado -->
       <div class="rounded-2xl border border-base-300 bg-gradient-to-br from-base-200/70 to-base-100 p-6 shadow-lg">
         <h1 class="text-2xl font-bold">Permisos</h1>
-        <p class="text-sm opacity-70">
-          Visualiza los permisos disponibles en el sistema.
-        </p>
+        <p class="text-sm opacity-70">Visualiza los permisos disponibles en el sistema.</p>
       </div>
+
+      <!-- Buscador con debounce — filtra en el cliente sin llamar al backend -->
       <div class="flex justify-end">
         <input v-model="search" @input="debounceSearch" type="text" placeholder="Buscar permiso..." class="input input-bordered w-full max-w-sm"/>
       </div>
+
       <ErrorState v-if="error" :message="error"/>
-      <div
-        class="rounded-2xl border border-base-300 bg-base-100 shadow-lg overflow-x-auto">
+
+      <!-- Tabla de permisos -->
+      <div class="rounded-2xl border border-base-300 bg-base-100 shadow-lg overflow-x-auto">
         <table class="table w-full">
           <thead>
             <tr>
@@ -44,12 +48,14 @@
           </tbody>
         </table>
       </div>
+
+      <!-- Paginacion -->
       <div class="flex justify-between items-center mt-4">
         <button class="btn btn-sm" @click="previousPage" :disabled="page <= 1">Anterior</button>
-        <span>Página {{ page }} de {{ totalPages }}
-        </span>
-        <button class="btn btn-sm" @click="nextPage":disabled="page >= totalPages">Siguiente</button>
+        <span>Página {{ page }} de {{ totalPages }}</span>
+        <button class="btn btn-sm" @click="nextPage" :disabled="page >= totalPages">Siguiente</button>
       </div>
+
     </div>
   </AdminLayout>
 </template>
@@ -62,6 +68,7 @@ import EmptyState from '../components/EmptyState.vue'
 import ErrorState from '../components/ErrorState.vue'
 import { getPermissions } from '../services/permissions.js'
 
+// Lista visible (pagina actual) y lista completa para filtrar
 const permissions = ref([])
 const allPermissions = ref([])
 const loading = ref(false)
@@ -70,16 +77,13 @@ const page = ref(1)
 const limit = ref(10)
 const search = ref('')
 
-const totalPages = computed(() => {
-  return Math.ceil( filteredPermissions.value.length / limit.value) || 1
-})
+// Total de paginas calculado sobre los resultados filtrados
+const totalPages = computed(() => Math.ceil(filteredPermissions.value.length / limit.value) || 1)
 
+// Filtra en el cliente por codigo, nombre o modulo
 const filteredPermissions = computed(() => {
-  if (!search.value.trim()) {
-    return allPermissions.value
-  }
+  if (!search.value.trim()) return allPermissions.value
   const term = search.value.toLowerCase()
-
   return allPermissions.value.filter(
     (perm) =>
       perm.code?.toLowerCase().includes(term) ||
@@ -88,17 +92,18 @@ const filteredPermissions = computed(() => {
   )
 })
 
+// Corta el slice de la pagina actual desde los resultados filtrados
 function updatePagination() {
   const start = (page.value - 1) * limit.value
-  const end = start + limit.value
-  permissions.value = filteredPermissions.value.slice( start, end)
+  permissions.value = filteredPermissions.value.slice(start, start + limit.value)
 }
 
+//Carga todos los permisos de una sola vez para filtrar en el cliente
 async function loadPermissions() {
   loading.value = true
   error.value = null
   try {
-    const response = await getPermissions({limit: 100})
+    const response = await getPermissions({ limit: 100 })
     allPermissions.value = Array.isArray(response) ? response : response.items || []
     updatePagination()
   } catch (e) {
@@ -108,24 +113,20 @@ async function loadPermissions() {
   }
 }
 
+// Navegacion entre paginas
 function previousPage() {
-  if (page.value > 1) {
-    page.value--
-    updatePagination()
-  }
+  if (page.value > 1) { page.value--; updatePagination() }
 }
 
 function nextPage() {
-  if (page.value < totalPages.value) {
-    page.value++
-    updatePagination()
-  }
+  if (page.value < totalPages.value) { page.value++; updatePagination() }
 }
 
+// Busqueda con debounce, resetea a pagina 1 al filtrar
 const debounceSearch = debounce(() => {
   page.value = 1
   updatePagination()
 }, 500)
 
-onMounted(() => {loadPermissions()})
+onMounted(() => loadPermissions())
 </script>

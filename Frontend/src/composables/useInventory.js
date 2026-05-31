@@ -10,6 +10,7 @@ export function useInventory() {
   const limit = ref(10)
   const search = ref('')
 
+  // Carga el inventario desde el backend con paginacion y busqueda
   const loadInventory = async () => {
     if (loading.value) return
     loading.value = true
@@ -24,12 +25,12 @@ export function useInventory() {
     }
   }
 
+  // Carga los ultimos movimientos de inventario, usado para historial
   const loadMovements = async () => {
     try {
       const response = await getMovements({ limit: 50 })
       movements.value = response.items || []
     } catch (e) {
-      console.error(e)
     }
   }
 

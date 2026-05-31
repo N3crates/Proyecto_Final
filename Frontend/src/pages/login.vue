@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen flex items-center justify-center bg-base-200 relative overflow-hidden">
 
-    <!-- Fondo decorativo -->
+    <!-- Circulos decorativos de fondo -->
     <div class="absolute inset-0 overflow-hidden pointer-events-none">
       <div class="absolute -top-40 -right-40 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
       <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
@@ -26,6 +26,7 @@
           </p>
         </div>
 
+        <!-- Lista de caracteristicas destacadas -->
         <div class="space-y-3">
           <div class="flex items-center gap-3 bg-primary-content/10 rounded-xl p-3">
             <span class="text-lg">📦</span>
@@ -42,7 +43,7 @@
         </div>
       </div>
 
-      <!-- Panel derecho - formulario -->
+      <!-- Panel derecho — formulario de login -->
       <div class="flex-1 bg-base-100 flex flex-col justify-center p-10">
         <div class="max-w-sm mx-auto w-full">
 
@@ -50,7 +51,6 @@
             <h1 class="text-2xl font-bold mb-1">Bienvenido</h1>
             <p class="text-sm opacity-50">Ingresa tus credenciales para continuar</p>
           </div>
-
           <form class="space-y-4" @submit.prevent="onSubmit">
             <div class="form-control">
               <label class="label pb-1">
@@ -77,6 +77,7 @@
               />
             </div>
 
+            <!-- Mensaje de error visible solo si hay fallo -->
             <div v-if="error" class="alert alert-error py-2">
               <span class="text-sm">{{ error }}</span>
             </div>
@@ -109,6 +110,7 @@ const password = ref('')
 const loading = ref(false)
 const error = ref(null)
 
+// Valida campos y ejecuta el login contra el backend
 async function onSubmit() {
   error.value = null
   if (!usuario.value) { error.value = 'El usuario es obligatorio'; return }
@@ -116,10 +118,11 @@ async function onSubmit() {
   loading.value = true
   try {
     const data = await loginRequest({ usuario: usuario.value.trim(), password: password.value })
+    // Guarda token y datos del usuario en el store
     authStore.setAuth(data)
     router.push('/dashboard')
   } catch (e) {
-    error.value = getErrorMessage(e, 'Error al iniciar sesión')
+    error.value = getErrorMessage(e, 'Error al iniciar sesion')
   } finally {
     loading.value = false
   }

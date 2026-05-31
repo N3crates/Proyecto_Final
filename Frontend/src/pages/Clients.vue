@@ -2,6 +2,7 @@
   <AdminLayout>
     <div class="mx-auto max-w-7xl space-y-6">
 
+      <!-- Encabezado con titulo y boton de nuevo cliente -->
       <div class="rounded-2xl border border-base-300 bg-gradient-to-br from-base-200/70 to-base-100 p-6 shadow-lg">
         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
@@ -10,6 +11,8 @@
           </div>
           <button v-if="hasPermission('clients:create')" class="btn btn-primary" @click="clientModal.open()">+ Nuevo Cliente</button>
         </div>
+
+        <!-- Barra de busqueda -->
         <div class="flex gap-3 mt-4">
           <input v-model="search" @input="debounceSearch" class="input input-bordered" placeholder="Buscar cliente..." />
           <button class="btn btn-primary" @click="doSearch">Buscar</button>
@@ -18,6 +21,7 @@
 
       <ErrorState v-if="error" :message="error" />
 
+      <!-- Tabla de clientes -->
       <div class="rounded-2xl border border-base-300 bg-base-100 shadow-lg overflow-x-auto">
         <table class="table w-full">
           <thead>
@@ -41,6 +45,7 @@
               <td>{{ client.email || '-' }}</td>
               <td>{{ client.telefono || '-' }}</td>
               <td>
+                <!-- Badge de estado activo/inactivo -->
                 <span class="badge" :class="client.activo ? 'badge-success' : 'badge-error'">
                   {{ client.activo ? 'Activo' : 'Inactivo' }}
                 </span>
@@ -57,6 +62,7 @@
         </table>
       </div>
 
+      <!-- Paginacion simple -->
       <div class="flex justify-between items-center mt-4">
         <button class="btn btn-sm" @click="previousPage" :disabled="page <= 1">Anterior</button>
         <span>Página {{ page }}</span>
@@ -65,6 +71,7 @@
 
     </div>
 
+    <!-- Modales -->
     <ClientModal ref="clientModal" :loading="saving" @submit="handleSubmit" />
     <ConfirmDialog ref="confirmDialog" title="Eliminar cliente" message="¿Estás seguro de que deseas eliminar este cliente?" :loading="saving" @confirm="handleDelete" />
   </AdminLayout>
@@ -84,21 +91,27 @@ import { getErrorMessage } from '../utils/errorHandler.js'
 import { useNotificationStore } from '../stores/notificationStore.js'
 import { required } from '../utils/validators.js'
 
+// Composable con estado y acciones de clientes
 const { clients, loading, error, page, search, loadClients, create, update, toggleActive, remove } = useClients()
-const saving = ref(false)
-const selectedClient = ref(null)
-const clientModal = ref(null)
-const confirmDialog = ref(null)
+
+const saving = ref(false)          // controla el estado de carga al guardar/eliminar
+const selectedClient = ref(null)   // cliente seleccionado para eliminar
+const clientModal = ref(null)      // referencia al modal de crear/editar
+const confirmDialog = ref(null)    // referencia al modal de confirmacion
 const notifications = useNotificationStore()
 
+// Maneja crear y editar 
 async function handleSubmit(payload) {
   error.value = null
+
+  // Validacion nombre obligatorio
   const validations = [required(payload.nombre, 'nombre')]
   const firstError = validations.find(v => v)
   if (firstError) { error.value = firstError; return }
 
   saving.value = true
   try {
+    //Limpia y normaliza el payload antes de enviarlo al backend
     const cleanPayload = {
       nombre: payload.nombre?.trim(),
       rfc: payload.rfc?.trim() || null,
@@ -108,8 +121,14 @@ async function handleSubmit(payload) {
       contacto: payload.contacto?.trim() || null,
       notas: payload.notas?.trim() || null,
     }
-    if (payload.mode === 'create') { await create(cleanPayload); notifications.add('Cliente creado correctamente', 'success') }
-    else { await update(payload.id, cleanPayload); notifications.add('Cliente actualizado correctamente', 'success') }
+
+    if (payload.mode === 'create') {
+      await create(cleanPayload)
+      notifications.add('Cliente creado correctamente', 'success')
+    } else {
+      await update(payload.id, cleanPayload)
+      notifications.add('Cliente actualizado correctamente', 'success')
+    }
     clientModal.value.close()
   } catch (e) {
     error.value = getErrorMessage(e, 'Error al guardar cliente')
@@ -118,6 +137,7 @@ async function handleSubmit(payload) {
   }
 }
 
+//estado activo/inactivo del cliente
 async function handleToggle(client) {
   try {
     await toggleActive(client.id, !client.activo)
@@ -127,8 +147,10 @@ async function handleToggle(client) {
   }
 }
 
+// Abre el confirm dialog guardando el cliente a eliminar
 function openDelete(client) { selectedClient.value = client; confirmDialog.value.open() }
 
+// Ejecuta la eliminacion tras confirmar
 async function handleDelete() {
   saving.value = true
   try {
@@ -143,8 +165,11 @@ async function handleDelete() {
   }
 }
 
+// Navegacion entre paginas
 function previousPage() { if (page.value > 1) { page.value--; loadClients() } }
 function nextPage() { page.value++; loadClients() }
+
+// Busqueda inmediata (boton) y con debounce (input)
 function doSearch() { page.value = 1; loadClients() }
 const debounceSearch = debounce(() => { page.value = 1; loadClients() }, 500)
 

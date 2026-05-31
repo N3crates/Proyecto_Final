@@ -9,11 +9,13 @@ export function useRoles() {
   const limit = ref(10)
   const search = ref('')
 
+  // Carga roles desde el backend con paginacion y busqueda
   const loadRoles = async () => {
     if (loading.value) return
     loading.value = true
     error.value = null
     try {
+      // getRoles retorna el array directamente desde el servicio
       const response = await getRoles({ page: page.value, limit: limit.value, q: search.value })
       roles.value = response || []
     } catch (e) {
@@ -23,10 +25,15 @@ export function useRoles() {
     }
   }
 
+  // Ejecuta una accion y recarga la lista al terminar
   const executeAction = async (callback) => {
-    const response = await callback()
-    await loadRoles()
-    return response
+    try {
+      const response = await callback()
+      await loadRoles()
+      return response
+    } catch (e) {
+      throw e
+    }
   }
 
   const create = (payload) => executeAction(() => createRole(payload))

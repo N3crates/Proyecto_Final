@@ -8,10 +8,11 @@ export function useSuppliers() {
   const page = ref(1)
   const limit = ref(10)
   const search = ref('')
-  const initialized = ref(false)
+  const initialized = ref(false) // evita mostrar empty state antes de la primera carga
 
+  // Carga proveedores desde el backend con paginacion y busqueda
   const loadSuppliers = async () => {
-    if (loading.value) return
+    if (loading.value) return // evita llamadas duplicadas si ya esta cargando
     loading.value = true
     error.value = null
     try {
@@ -25,6 +26,7 @@ export function useSuppliers() {
     }
   }
 
+  // Ejecuta una accion y recarga la lista al terminar
   const executeAction = async (callback) => {
     try {
       const response = await callback()

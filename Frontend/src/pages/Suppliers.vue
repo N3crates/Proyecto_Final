@@ -2,6 +2,7 @@
   <AdminLayout>
     <div class="mx-auto max-w-7xl space-y-6">
 
+      <!-- Encabezado con titulo y boton de nuevo proveedor -->
       <div class="rounded-2xl border border-base-300 bg-gradient-to-br from-base-200/70 to-base-100 p-6 shadow-lg">
         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
@@ -10,6 +11,8 @@
           </div>
           <button v-if="hasPermission('suppliers:create')" class="btn btn-primary" @click="supplierModal.open()">+ Nuevo Proveedor</button>
         </div>
+
+        <!-- Barra de busqueda con debounce y boton manual -->
         <div class="flex gap-3 mt-4">
           <input v-model="search" @input="debounceSearch" class="input input-bordered" placeholder="Buscar proveedor..." />
           <button class="btn btn-primary" @click="doSearch">Buscar</button>
@@ -18,6 +21,7 @@
 
       <ErrorState v-if="error" :message="error" />
 
+      <!-- Tabla de proveedores -->
       <div class="rounded-2xl border border-base-300 bg-base-100 shadow-lg overflow-x-auto">
         <table class="table w-full">
           <thead>
@@ -59,6 +63,7 @@
         </table>
       </div>
 
+      <!-- Paginacion -->
       <div class="flex justify-between items-center mt-4">
         <button class="btn btn-sm" @click="previousPage" :disabled="page <= 1">Anterior</button>
         <span>Página {{ page }}</span>
@@ -67,6 +72,7 @@
 
     </div>
 
+    <!-- Modales -->
     <SupplierModal ref="supplierModal" :loading="saving" @submit="handleSubmit" />
     <ConfirmDialog ref="confirmDialog" title="Eliminar proveedor" message="¿Estás seguro de que deseas eliminar este proveedor?" :loading="saving" @confirm="handleDelete" />
   </AdminLayout>
@@ -86,21 +92,27 @@ import { getErrorMessage } from '../utils/errorHandler.js'
 import { useNotificationStore } from '../stores/notificationStore.js'
 import { required } from '../utils/validators.js'
 
+// Composable con estado y acciones de proveedores
 const { suppliers, loading, error, page, search, loadSuppliers, create, update, toggleActive, remove } = useSuppliers()
-const saving = ref(false)
-const selectedSupplier = ref(null)
-const supplierModal = ref(null)
-const confirmDialog = ref(null)
+
+const saving = ref(false)           // controla el estado de carga al guardar/eliminar
+const selectedSupplier = ref(null)  // proveedor seleccionado para eliminar
+const supplierModal = ref(null)     // referencia al modal de crear/editar
+const confirmDialog = ref(null)     // referencia al modal de confirmación
 const notifications = useNotificationStore()
 
+// Maneja crear y editar segun el mode que viene del modal
 async function handleSubmit(payload) {
   error.value = null
+
+  // Validacion: nombre obligatorio
   const validations = [required(payload.nombre, 'nombre')]
   const firstError = validations.find(v => v)
   if (firstError) { error.value = firstError; return }
 
   saving.value = true
   try {
+    // Limpia y normaliza el payload antes de enviarlo al backend
     const cleanPayload = {
       nombre: payload.nombre?.trim(),
       rfc: payload.rfc?.trim() || null,
@@ -109,10 +121,16 @@ async function handleSubmit(payload) {
       direccion: payload.direccion?.trim() || null,
       contacto: payload.contacto?.trim() || null,
       giro: payload.giro?.trim() || null,
-      notas: payload.notas?.trim() || nulSl,
+      notas: payload.notas?.trim() || null, 
     }
-    if (payload.mode === 'create') { await create(cleanPayload); notifications.add('Proveedor creado correctamente', 'success') }
-    else { await update(payload.id, cleanPayload); notifications.add('Proveedor actualizado correctamente', 'success') }
+
+    if (payload.mode === 'create') {
+      await create(cleanPayload)
+      notifications.add('Proveedor creado correctamente', 'success')
+    } else {
+      await update(payload.id, cleanPayload)
+      notifications.add('Proveedor actualizado correctamente', 'success')
+    }
     supplierModal.value.close()
   } catch (e) {
     error.value = getErrorMessage(e, 'Error al guardar proveedor')
@@ -121,6 +139,7 @@ async function handleSubmit(payload) {
   }
 }
 
+// Cambia el estado activo/inactivo del proveedor
 async function handleToggle(supplier) {
   try {
     await toggleActive(supplier.id, !supplier.activo)
@@ -130,8 +149,10 @@ async function handleToggle(supplier) {
   }
 }
 
+// Abre el confirm dialog guardando el proveedor a eliminar
 function openDelete(supplier) { selectedSupplier.value = supplier; confirmDialog.value.open() }
 
+// Ejecuta la eliminacion tras confirmar
 async function handleDelete() {
   saving.value = true
   try {
@@ -146,8 +167,11 @@ async function handleDelete() {
   }
 }
 
+// Navegacion entre páginas
 function previousPage() { if (page.value > 1) { page.value--; loadSuppliers() } }
 function nextPage() { page.value++; loadSuppliers() }
+
+// Busqueda inmediata (boton) y con debounce
 function doSearch() { page.value = 1; loadSuppliers() }
 const debounceSearch = debounce(() => { page.value = 1; loadSuppliers() }, 500)
 
