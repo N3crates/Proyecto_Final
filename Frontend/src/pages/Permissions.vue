@@ -2,15 +2,20 @@
   <AdminLayout>
     <div class="mx-auto max-w-7xl space-y-6">
 
-      <!-- Encabezado -->
+      <!-- Encabezado con titulo y buscador — igual que el resto de paginas -->
       <div class="rounded-2xl border border-base-300 bg-gradient-to-br from-base-200/70 to-base-100 p-6 shadow-lg">
-        <h1 class="text-2xl font-bold">Permisos</h1>
-        <p class="text-sm opacity-70">Visualiza los permisos disponibles en el sistema.</p>
-      </div>
+        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 class="text-2xl font-bold">Permisos</h1>
+            <p class="text-sm opacity-70">Visualiza los permisos disponibles en el sistema.</p>
+          </div>
+        </div>
 
-      <!-- Buscador con debounce — filtra en el cliente sin llamar al backend -->
-      <div class="flex justify-end">
-        <input v-model="search" @input="debounceSearch" type="text" placeholder="Buscar permiso..." class="input input-bordered w-full max-w-sm"/>
+        <!-- Barra de busqueda con debounce y boton manual -->
+        <div class="flex gap-3 mt-4">
+          <input v-model="search" @input="debounceSearch" type="text" placeholder="Buscar permiso..." class="input input-bordered"/>
+          <button class="btn btn-primary" @click="doSearch">Buscar</button>
+        </div>
       </div>
 
       <ErrorState v-if="error" :message="error"/>
@@ -38,6 +43,7 @@
               </td>
             </tr>
             <tr v-for="perm in permissions" :key="perm.id">
+              <!-- Codigo en monospace por ser formato recurso:accion -->
               <td class="font-mono text-sm">{{ perm.code }}</td>
               <td>{{ perm.nombre }}</td>
               <td>
@@ -49,7 +55,7 @@
         </table>
       </div>
 
-      <!-- Paginacion -->
+      <!-- Paginacion con limite real por totalPages -->
       <div class="flex justify-between items-center mt-4">
         <button class="btn btn-sm" @click="previousPage" :disabled="page <= 1">Anterior</button>
         <span>Página {{ page }} de {{ totalPages }}</span>
@@ -98,7 +104,7 @@ function updatePagination() {
   permissions.value = filteredPermissions.value.slice(start, start + limit.value)
 }
 
-//Carga todos los permisos de una sola vez para filtrar en el cliente
+// Carga todos los permisos de una sola vez para filtrar en el cliente
 async function loadPermissions() {
   loading.value = true
   error.value = null
@@ -122,11 +128,9 @@ function nextPage() {
   if (page.value < totalPages.value) { page.value++; updatePagination() }
 }
 
-// Busqueda con debounce, resetea a pagina 1 al filtrar
-const debounceSearch = debounce(() => {
-  page.value = 1
-  updatePagination()
-}, 500)
+// Busqueda inmediata (boton) y con debounce (input)
+function doSearch() { page.value = 1; updatePagination() }
+const debounceSearch = debounce(() => { page.value = 1; updatePagination() }, 500)
 
 onMounted(() => loadPermissions())
 </script>

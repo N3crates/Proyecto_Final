@@ -2,15 +2,20 @@
   <AdminLayout>
     <div class="mx-auto max-w-7xl space-y-6">
 
-      <!-- Encabezado de la pagina -->
+      <!-- Encabezado con titulo y buscador — igual que el resto de paginas -->
       <div class="rounded-2xl border border-base-300 bg-gradient-to-br from-base-200/70 to-base-100 p-6 shadow-lg">
-        <h1 class="text-2xl font-bold">Auditoría</h1>
-        <p class="text-sm opacity-70">Historial de eventos del sistema.</p>
-      </div>
+        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 class="text-2xl font-bold">Auditoría</h1>
+            <p class="text-sm opacity-70">Historial de eventos del sistema.</p>
+          </div>
+        </div>
 
-      <!-- Buscador de eventos con debounce -->
-      <div class="flex justify-end">
-        <input v-model="search" @input="debounceSearch" type="text" placeholder="Buscar evento..." class="input input-bordered w-full max-w-sm"/>
+        <!-- Barra de busqueda con debounce y boton manual -->
+        <div class="flex gap-3 mt-4">
+          <input v-model="search" @input="debounceSearch" type="text" placeholder="Buscar evento..." class="input input-bordered" />
+          <button class="btn btn-primary" @click="doSearch">Buscar</button>
+        </div>
       </div>
 
       <ErrorState v-if="error" :message="error"/>
@@ -39,7 +44,7 @@
               </td>
             </tr>
             <tr v-for="event in events" :key="event.id">
-              <!-- Fecha -->
+              <!-- Fecha formateada a locale local -->
               <td class="text-sm">{{ event.createdAt ? new Date(event.createdAt).toLocaleString() : '-' }}</td>
               <!-- Muestra nombre de usuario o id como fallback -->
               <td>{{ event.usuario || event.userId || '-' }}</td>
@@ -80,7 +85,7 @@ const limit = ref(10)
 const total = ref(0)
 const search = ref('')
 
-// Total de paginas calculado desde el total de registros
+// Total de paginas calculado desde el total de registros del backend
 const totalPages = computed(() => Math.ceil(total.value / limit.value) || 1)
 
 // Carga eventos del backend con paginacion y busqueda
@@ -107,11 +112,9 @@ async function nextPage() {
   if (page.value < totalPages.value) { page.value++; await loadAudit() }
 }
 
-// Busqueda con debounce para no disparar una peticion por cada tecla
-const debounceSearch = debounce(async () => {
-  page.value = 1
-  await loadAudit()
-}, 500)
+// Busqueda inmediata (boton) y con debounce (input)
+function doSearch() { page.value = 1; loadAudit() }
+const debounceSearch = debounce(() => { page.value = 1; loadAudit() }, 500)
 
 onMounted(() => loadAudit())
 </script>
