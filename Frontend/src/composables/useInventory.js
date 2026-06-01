@@ -32,13 +32,14 @@ export function useInventory() {
 
   // Carga los ultimos movimientos de inventario — usado para historial
   const loadMovements = async () => {
-    try {
-      const response = await getMovements({ limit: 50 })
-      movements.value = response.items || []
-    } catch (e) {
-      // error silencioso — los movimientos son secundarios y no bloquean la vista
-    }
+  try {
+    const response = await getMovements({ limit: 50 })
+
+    movements.value = response.items || []
+  } catch (e) {
+    console.error('MOVEMENTS ERROR:', e)
   }
+}
 
   return { inventory, movements, loading, error, page, limit, total, totalPages, search, loadInventory, loadMovements }
 }

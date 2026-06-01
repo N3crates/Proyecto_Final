@@ -63,7 +63,38 @@
             </tr>
           </tbody>
         </table>
-      </div>
+        <div class="rounded-2xl border border-base-300 bg-base-100 shadow-lg overflow-x-auto mt-6">
+  <div class="p-4 border-b">
+    <h2 class="text-lg font-bold">Historial de Movimientos</h2>
+  </div>
+
+  <table class="table w-full">
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Producto</th>
+        <th>Tipo</th>
+        <th>Cantidad</th>
+        <th>Motivo</th>
+      </tr>
+    </thead>
+      <tbody>
+        <tr v-if="movements.length === 0">
+          <td colspan="5" class="text-center opacity-50">
+            Sin movimientos registrados
+          </td>
+        </tr>
+        <tr v-for="movement in movements" :key="movement.id">
+          <td>{{ new Date(movement.createdAt).toLocaleString() }}</td>
+          <td>{{ movement.productNombre }}</td>
+          <td>{{ movement.tipo }}</td>
+          <td>{{ movement.cantidad }}</td>
+          <td>{{ movement.motivo }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
 
       <!-- Paginacion con limite real por totalPages -->
       <div class="flex justify-between items-center mt-4">
@@ -93,8 +124,18 @@ import { getErrorMessage } from '../utils/errorHandler.js'
 import { useNotificationStore } from '../stores/notificationStore.js'
 
 // Composable con estado y carga de inventario
-const { inventory, loading, error, page, total, totalPages, search, loadInventory } = useInventory()
-
+const {
+  inventory,
+  movements,
+  loading,
+  error,
+  page,
+  total,
+  totalPages,
+  search,
+  loadInventory,
+  loadMovements
+} = useInventory()
 const saving = ref(false)
 const adjustModal = ref(null)
 const notifications = useNotificationStore()
@@ -116,6 +157,7 @@ async function handleAdjust(payload) {
     notifications.add('Inventario ajustado correctamente', 'success')
     adjustModal.value.close()
     await loadInventory()
+    await loadMovements()
   } catch (e) {
     error.value = getErrorMessage(e, 'Error al ajustar inventario')
   } finally {
@@ -131,5 +173,9 @@ function nextPage() { if (page.value < totalPages.value) { page.value++; loadInv
 function doSearch() { page.value = 1; loadInventory() }
 const debounceSearch = debounce(() => { page.value = 1; loadInventory() }, 500)
 
-onMounted(() => loadInventory())
+onMounted(async () => {
+  await loadInventory()
+
+  await loadMovements()
+})
 </script>
